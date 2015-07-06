@@ -98,45 +98,82 @@ type FunctionError struct {
 func (this FunctionError) Error() string {
 	return fmt.Sprintf("%s: %s", this.Function, this.Message)
 }
-
-func (this *WorldPoint2d) Translate(distance WorldDistance, theta Angle) error {
+func checkTheta(theta Angle) error {
 	if !(theta >= 0 && theta < NumberOfAngles) {
 		return &FunctionError{
 			Function: "WorldPoint2d.Translate",
 			Message:  "Theta is less than zero or theta >= Number of angles!",
 		}
+	} else {
+		return nil
 	}
-
+}
+func checkCosineTable() error {
 	if CosineTable[0] != TrigMagnitude {
 		return &FunctionError{
 			Function: "WorldPoint2d.Translate",
 			Message:  fmt.Sprintf("CosineTable[0] != TrigMagnitude, Actual Value is: %d", CosineTable[0]),
 		}
+	} else {
+		return nil
 	}
-
-	this.X += (distance * WorldDistance(CosineTable[theta])) >> TrigShift
-	this.Y += (distance * WorldDistance(SineTable[theta])) >> TrigShift
-	return nil
+}
+func (this *WorldPoint2d) Translate(distance WorldDistance, theta Angle) error {
+	if err := checkTheta(theta); err != nil {
+		return err
+	} else if err := checkCosineTable(); err != nil {
+		return err
+	} else {
+		this.X += (distance * WorldDistance(CosineTable[theta])) >> TrigShift
+		this.Y += (distance * WorldDistance(SineTable[theta])) >> TrigShift
+		return nil
+	}
 }
 func (this *WorldPoint2d) Rotate(origin *WorldPoint2d, theta Angle) error {
 	var temp WorldPoint2d
-
-	temp.X = this.X - origin.X
-	temp.Y = this.Y - origin.Y
-	this.X = ((temp.X * WorldDistance(CosineTable[theta])) >> TrigShift) + ((temp.Y * WorldDistance(SineTable[theta])) >> TrigShift) + origin.X
-	this.Y = ((temp.Y * WorldDistance(CosineTable[theta])) >> TrigShift) - ((temp.X * WorldDistance(SineTable[theta])) >> TrigShift) + origin.Y
-	return nil
+	if err := checkTheta(theta); err != nil {
+		return err
+	} else if err := checkCosineTable(); err != nil {
+		return err
+	} else {
+		temp.X = this.X - origin.X
+		temp.Y = this.Y - origin.Y
+		this.X = ((temp.X * WorldDistance(CosineTable[theta])) >> TrigShift) + ((temp.Y * WorldDistance(SineTable[theta])) >> TrigShift) + origin.X
+		this.Y = ((temp.Y * WorldDistance(CosineTable[theta])) >> TrigShift) - ((temp.X * WorldDistance(SineTable[theta])) >> TrigShift) + origin.Y
+		return nil
+	}
 }
 
 func (this *WorldPoint2d) Transform(origin *WorldPoint2d, theta Angle) error {
 	var temp WorldPoint2d
+	if err := checkTheta(theta); err != nil {
+		return err
+	} else if err := checkCosineTable(); err != nil {
+		return err
+	} else {
+		temp.X = this.X - origin.X
+		temp.Y = this.Y - origin.Y
 
-	temp.X = this.X - origin.X
-	temp.Y = this.Y - origin.Y
+		this.X = ((temp.X * WorldDistance(CosineTable[theta])) >> TrigShift) + ((temp.Y * WorldDistance(SineTable[theta])) >> TrigShift)
+		this.Y = ((temp.Y * WorldDistance(CosineTable[theta])) >> TrigShift) - ((temp.X * WorldDistance(SineTable[theta])) >> TrigShift)
+		return nil
+	}
+}
 
-	this.X = ((temp.X * WorldDistance(CosineTable[theta])) >> TrigShift) + ((temp.Y * WorldDistance(SineTable[theta])) >> TrigShift)
-	this.Y = ((temp.Y * WorldDistance(CosineTable[theta])) >> TrigShift) - ((temp.X * WorldDistance(SineTable[theta])) >> TrigShift)
-	return nil
+func GuessDistance(p0, p1 *WorldPoint2d) WorldDistance {
+	dx := int64(p0.X) - int64(p1.X)
+	dy := int64(p0.Y) - int64(p1.Y)
+	if dx < 0 {
+		dx = -dx
+	}
+	if dy < 0 {
+		dy = -dy
+	}
+	if distance := GuessHypotenuse(dx, dy); distance > 32767 {
+		return WorldDistance(32767)
+	} else {
+		return WorldDistance(distance)
+	}
 }
 
 type WorldPoint3d struct {
