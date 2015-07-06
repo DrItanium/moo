@@ -1,6 +1,6 @@
 // Texture related operations
 
-package cseries
+package moo
 
 type Pixel8 byte
 type Pixel16 uint16
@@ -8,6 +8,8 @@ type Pixel32 uint32
 
 type Pixel interface {
 	Red() byte
+	Green() byte
+	Blue() byte
 }
 
 const (
@@ -24,14 +26,15 @@ const (
 )
 
 func (this Pixel16) Red() byte {
-	return this >> 10
+	return byte(this >> 10)
 }
 func (this Pixel16) Green() byte {
-	return (this >> 5) & Pixel16MaximumComponent
+	return byte((this >> 5)) & Pixel16MaximumComponent
+
 }
 
 func (this Pixel16) Blue() byte {
-	return this & Pixel16MaximumComponent
+	return byte(this) & Pixel16MaximumComponent
 }
 
 func NewPixel16(r, g, b byte) Pixel16 {
@@ -49,4 +52,14 @@ func NewPixel16(r, g, b byte) Pixel16 {
 //	bComponent := Pixel16((Pixel16(b)>>11) & Pixel
 //}
 
-func (this Pixel32) Red()
+func (this Pixel32) Red() byte {
+	return byte(this >> 16)
+}
+
+func (this Pixel32) Green() byte {
+	return byte(this>>8) & Pixel32MaximumComponent
+}
+
+func (this Pixel32) Blue() byte {
+	return byte(this) & Pixel32MaximumComponent
+}
