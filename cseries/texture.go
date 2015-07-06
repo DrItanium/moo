@@ -6,6 +6,10 @@ type Pixel8 byte
 type Pixel16 uint16
 type Pixel32 uint32
 
+type Pixel interface {
+	Red() byte
+}
+
 const (
 	Pixel8MaxColors  = 256
 	Pixel16MaxColors = 32768
@@ -19,14 +23,14 @@ const (
 	Pixel32MaximumComponent = 0xff
 )
 
-func (this Pixel16) Red() Pixel16 {
+func (this Pixel16) Red() byte {
 	return this >> 10
 }
-func (this Pixel16) Green() Pixel16 {
+func (this Pixel16) Green() byte {
 	return (this >> 5) & Pixel16MaximumComponent
 }
 
-func (this Pixel16) Blue() Pixel16 {
+func (this Pixel16) Blue() byte {
 	return this & Pixel16MaximumComponent
 }
 
@@ -44,3 +48,5 @@ func NewPixel16(r, g, b byte) Pixel16 {
 //	gComponent := Pixel16((Pixel16(g)>>6) & Pixel16(0x03e0))
 //	bComponent := Pixel16((Pixel16(b)>>11) & Pixel
 //}
+
+func (this Pixel32) Red()
