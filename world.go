@@ -39,3 +39,35 @@ func (this WorldDistance) FractionalPart() WorldDistance {
 func (this WorldDistance) IntegralPart() WorldDistance {
 	return this >> WorldFractionalBits
 }
+
+func (this WorldDistance) ToFixed() cseries.Fixed {
+	return cseries.Fixed(this) << (cseries.FixedFractionalBits - WorldFractionalBits)
+}
+
+func FixedToWorld(f cseries.Fixed) WorldDistance {
+	return WorldDistance(f >> (cseries.FixedFractionalBits - WorldFractionalBits))
+}
+
+func NormalizeAngle(a Angle) Angle {
+	return a & Angle(NumberOfAngles-1)
+}
+
+func (this Angle) Facing4() Angle {
+	return NormalizeAngle(this-EighthCircle) >> (AngularBits - 2)
+}
+
+func (this Angle) Facing5() Angle {
+	return NormalizeAngle(this-FullCircle/10) / ((NumberOfAngles / 5) + 1)
+}
+
+func (this Angle) Facing8() Angle {
+	return NormalizeAngle(this-SixteenthCircle) >> (AngularBits - 3)
+}
+
+func GuessHypotenuse(x, y int64) int64 {
+	if x > y {
+		return x + (y >> 1)
+	} else {
+		return y + (x >> 1)
+	}
+}
