@@ -2,6 +2,7 @@
 package moo
 
 import (
+	"fmt"
 	"github.com/DrItanium/moo/cseries"
 	"math"
 )
@@ -87,6 +88,55 @@ func GuessHypotenuse(x, y int64) int64 {
 type WorldPoint2d struct {
 	X WorldDistance
 	Y WorldDistance
+}
+
+type FunctionError struct {
+	Function string
+	Message  string
+}
+
+func (this FunctionError) Error() string {
+	return fmt.Sprintf("%s: %s", this.Function, this.Message)
+}
+
+func (this *WorldPoint2d) Translate(distance WorldDistance, theta Angle) error {
+	if !(theta >= 0 && theta < NumberOfAngles) {
+		return &FunctionError{
+			Function: "WorldPoint2d.Translate",
+			Message:  "Theta is less than zero or theta >= Number of angles!",
+		}
+	}
+
+	if CosineTable[0] != TrigMagnitude {
+		return &FunctionError{
+			Function: "WorldPoint2d.Translate",
+			Message:  fmt.Sprintf("CosineTable[0] != TrigMagnitude, Actual Value is: %d", CosineTable[0]),
+		}
+	}
+
+	this.X += (distance * WorldDistance(CosineTable[theta])) >> TrigShift
+	this.Y += (distance * WorldDistance(SineTable[theta])) >> TrigShift
+	return nil
+}
+func (this *WorldPoint2d) Rotate(origin *WorldPoint2d, theta Angle) error {
+	var temp WorldPoint2d
+
+	temp.X = this.X - origin.X
+	temp.Y = this.Y - origin.Y
+	this.X = ((temp.X * WorldDistance(CosineTable[theta])) >> TrigShift) + ((temp.Y * WorldDistance(SineTable[theta])) >> TrigShift) + origin.X
+	this.Y = ((temp.Y * WorldDistance(CosineTable[theta])) >> TrigShift) - ((temp.X * WorldDistance(SineTable[theta])) >> TrigShift) + origin.Y
+	return nil
+}
+
+func (this *WorldPoint2d) Transform(origin *WorldPoint2d, theta Angle) error {
+	var temp WorldPoint2d
+
+	temp.X = this.X - origin.X
+	temp.Y = this.Y - origin.Y
+
+	this.X = ((temp.X * WorldDistance(CosineTable[theta])) >> TrigShift) + ((temp.Y * WorldDistance(SineTable[theta])) >> TrigShift)
+	this.Y = ((temp.Y * WorldDistance(CosineTable[theta])) >> TrigShift) - ((temp.X * WorldDistance(SineTable[theta])) >> TrigShift)
+	return nil
 }
 
 type WorldPoint3d struct {
@@ -324,4 +374,45 @@ func ISqrt(x uint32) int32 {
 		r++ // was r += 1 the original code
 	}
 	return int32(r)
+}
+
+// make sure that the random function is as close as possible to the original
+var randomSeed = cseries.Word(0x1)
+var localRandomSeed = cseries.Word(0x1)
+
+func GetRandomSeed() cseries.Word {
+	return randomSeed
+}
+
+func SetRandomSeed(seed cseries.Word) {
+	if seed != 0 {
+		randomSeed = seed
+	} else {
+		randomSeed = DefaultRandomSeed
+	}
+}
+
+func Random() cseries.Word {
+	seed := randomSeed
+	if (seed & 1) != 0 {
+		seed = (seed >> 1) ^ 0xb400
+	} else {
+		seed >>= 1
+	}
+
+	randomSeed = seed
+	return seed
+}
+
+func LocalRandom() cseries.Word {
+	seed := localRandomSeed
+
+	if (seed & 1) != 0 {
+		seed = (seed >> 1) ^ 0xb400
+	} else {
+		seed >>= 1
+	}
+
+	localRandomSeed = seed
+	return seed
 }
