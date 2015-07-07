@@ -112,11 +112,11 @@ var MapTerminalDataLength int32
 //#define TERMINAL_IS_DIRTY(term) ((term)->flags & _terminal_is_dirty)
 //#define SET_TERMINAL_IS_DIRTY(term, v) ((v)? ((term)->flags |= _terminal_is_dirty) : ((term)->flags &= ~_terminal_is_dirty))
 const (
-	LabelInset = 3
-	//LogDurationBeforeTimeout = 2 * TicksPerSecond
-	BorderHeight = 10
-	BorderInset  = 9
-	FudgeFactor  = 1
+	LabelInset               = 3
+	LogDurationBeforeTimeout = 2 * TicksPerSecond
+	BorderHeight             = 10
+	BorderInset              = 9
+	FudgeFactor              = 1
 	// terminal-states
 	ReadingTerminal = iota
 	NoTerminalState

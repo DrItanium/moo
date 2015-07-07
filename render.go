@@ -110,7 +110,6 @@ var RenderFlags renderFlags
 
 // from render.c
 const (
-	MaximumVerticesPerPolygon       = 0 // TODO: eliminate this once we have the real value
 	PolygonQueueSize                = 256
 	MaximumVerticiesPerWorldPolygon = MaximumVerticesPerPolygon + 4
 	ExplosionEffectRange            = WorldOne / 12
@@ -185,6 +184,60 @@ func AllocateRenderMemory() error {
 		return fmt.Errorf("AllocateRenderMemory: too many render flags!")
 	}
 	return nil
+}
+
+const (
+	MaximumNodes                    = 512
+	MaximumClippingEndpointsPerNode = 4
+	MaximumClippingLinesPerNode     = MaximumVerticesPerPolygon - 2
+)
+
+type NodeData struct {
+	Flags                 cseries.Word
+	PolygonIndex          int16
+	ClippingEndpointCount int16
+	ClippingEndpoints     [MaximumClippingLinesPerNode]int16
+	ClippingLineCount     int16
+	ClippingLines         [MaximumClippingLinesPerNode]int16
+	Parent                *NodeData
+	Reference             **NodeData
+	Siblings              *NodeData
+	Children              []NodeData
+}
+
+func NewNodeData(polygonIndex int16, flags cseries.Word, parent *NodeData, reference **NodeData) *NodeData {
+	return &NodeData{
+		Flags:                 flags,
+		PolygonIndex:          polygonIndex,
+		ClippingEndpointCount: 0,
+		ClippingLineCount:     0,
+		Parent:                parent,
+		Reference:             reference,
+		Siblings:              nil,
+	}
+}
+
+const (
+	MaximumSortedNodes = 128
+)
+
+type SortedNodeData struct {
+	PolygonIndex    int16
+	InteriorObjects []RenderObjectData
+	ExteriorObjects []RenderObjectData
+	ClippingWindows []ClippingWindowData
+}
+
+const (
+	MaximumRenderObjects = 72
+)
+
+type RenderObjectData struct {
+	Node            *SortedNodeData
+	ClippingWindows []ClippingWindowData
+	Next            *RenderObjectData
+	Rectangle       RectangleDefinition
+	Ymedia          int16
 }
 
 func InitializeViewData(view *ViewData) {
