@@ -53,7 +53,7 @@ const (
 )
 
 func (this ShapeDescriptor) Shape() cseries.Word {
-	return cseries.Word(this & cseries.Word(MaximumShapesPerCollection-1))
+	return cseries.Word(this) & cseries.Word(MaximumShapesPerCollection-1)
 }
 
 //#define GET_DESCRIPTOR_COLLECTION(d) (((d)>>DESCRIPTOR_SHAPE_BITS)&(word)((1<<(DESCRIPTOR_COLLECTION_BITS+DESCRIPTOR_CLUT_BITS))-1))
