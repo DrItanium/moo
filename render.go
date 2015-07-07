@@ -32,6 +32,39 @@ type DefinitionHeader struct {
 }
 
 type ViewData struct {
+	FieldOfView                    int16 /* width of the view cone, in degrees (!) */
+	StandardScreenWidth            int16 /* this is *not* the width of the projected image (see initialize_view_data() in RENDER.C */
+	ScreenWidth, ScreenHeight      int16 /* dimensions of the projected image */
+	HorizontalScale, VerticalScale int16
+
+	HalfScreenWidth, HalfScreenHeight int16
+	WorldToScreenX, WorldToScreenY    int16
+	Dtanpitch                         int16 /* world_to_screen*tan(pitch) */
+	HalfCone                          Angle /* often ==field_of_view/2 (when screen_width==standard_screen_width) */
+	HalfVerticalCone                  Angle
+
+	UntransformedLeftEdge, UntransformedRightEdge WorldVector2d
+	LeftEdge, RightEdge, TopEdge, BottomEdge      WorldVector2d
+
+	TicksElapsed          int16
+	TickCount             int32 /* for effects and transfer modes */
+	OriginPolygonIndex    int16
+	Yaw, Pitch, Roll      Angle
+	Origin                WorldPoint3d
+	MaximumDepthIntensity cseries.Fixed /* in fixed units */
+
+	ShadingMode int16
+
+	Effect, EffectPhase                    int16
+	RealWorldToScreenX, RealWorldToScreenY int16
+
+	OverheadMapActive bool
+	OverheadMapScale  int16
+
+	UnderMediaBoundary bool
+	UnderMediaIndex    int16
+
+	TerminalModeActive bool
 }
 
 const (
@@ -72,6 +105,7 @@ func StartRenderEffect(view *ViewData, effect int16) {
 
 }
 
+// in screen.c/h
 func RenderOverheadMap(view *ViewData) {
 
 }
