@@ -206,5 +206,13 @@ type ShellCasingData struct {
 type PlayerWeaponData struct {
 	CurrentWeapon int16
 	DesiredWeapon int16
-	//Weapons [NumberOfWeapons]WeaponData
+	Weapons       []WeaponData      // originally this had NUMBER_OF_WEAPONS defined but that sort of information is generated off of sizeof calls which I don't have access to in a safe manner
+	ShellCasings  []ShellCasingData // as with Weapons, the number of entries is not explicitly defined at compile time [ instead runtime ]
+}
+
+func NewPlayerWeaponData() *PlayerWeaponData {
+	var p PlayerWeaponData
+	p.Weapons = make([]WeaponData, len(WeaponDefinitions))
+	p.ShellCasings = make([]ShellCasingData, len(ShellCasingDefinitions))
+	return &p
 }
