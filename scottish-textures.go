@@ -5,12 +5,11 @@ import "github.com/DrItanium/moo/cseries"
 const (
 	MaximumScreenWidth  = 640
 	MaximumScreenHeight = 480
+
+	ShadelessBit = 0x8000
 )
 
 // TODO: finish up this file
-const (
-	ShadelessBit = 0x8000
-)
 
 type RectangleDefinition struct {
 	Flags   cseries.Word

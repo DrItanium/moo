@@ -14,6 +14,15 @@ const (
 	ObjectCollection
 	InterfaceCollection
 	SceneryCollection
+
+	HighLevelShapeNameLength = 32
+	// Low Level Shape Definition Flags
+	XMirroredBit        = 0x8000
+	YMirroredBit        = 0x4000
+	KeypointObscuredBit = 0x2000
+
+	// RgbColorValue flags
+	SelfLuminescentColorFlag = 0x80
 )
 
 type CollectionDefinition struct {
@@ -34,10 +43,6 @@ type CollectionDefinition struct {
 	Unused                          [253]int16
 }
 
-const (
-	HighLevelShapeNameLength = 32
-)
-
 type HighLevelShapeDefinition struct {
 	Type                 int16
 	Flags                cseries.Word
@@ -57,12 +62,6 @@ type HighLevelShapeDefinition struct {
 	LowLevelShapeIndexes [1]int16
 }
 
-const (
-	XMirroredBit        = 0x8000
-	YMirroredBit        = 0x4000
-	KeypointObscuredBit = 0x2000
-)
-
 type LowLevelShapeDefinition struct {
 	Flags                 cseries.Word
 	MinimumLightIntensity cseries.Fixed
@@ -79,10 +78,6 @@ type LowLevelShapeDefinition struct {
 	WorldY0               int16
 	Unused                [4]int16
 }
-
-const (
-	SelfLuminescentColorFlag = 0x80
-)
 
 type RgbColorValue struct {
 	Flags byte
