@@ -21,6 +21,53 @@ const (
 	// macro constants
 	NormalFieldOfView      = 80
 	ExtravisionFieldOfView = 130
+	// render flags
+	PolygonIsVisibleBit           = iota /* some part of this polygon is horizontally in the view cone */
+	EndpointHasBeenVisitedBit            /* we've already tried to cast a ray out at this endpoint */
+	EndpointIsVisibleBit                 /* this endpoint is horizontally in the view cone */
+	SideIsVisibleBit                     /* this side was crossed while building the tree and should be drawn */
+	LineHasClipDataBit                   /* this line has a valid clip entry */
+	EndpointHasClipDataBit               /* this endpoint has a valid clip entry */
+	EndpointHasBeenTransformedBit        /* this endpoint has been transformed into screen-space */
+	NumberOfRenderFlags                  /* should be <=16 */
+
+	PolygonIsVisible           = 1 << PolygonIsVisibleBit
+	EndpointHasBeenVisited     = 1 << EndpointHasBeenVisitedBit
+	EndpointIsVisible          = 1 << EndpointIsVisibleBit
+	SideIsVisible              = 1 << SideIsVisibleBit
+	LineHasClipData            = 1 << LineHasClipDataBit
+	EndpointHasClipData        = 1 << EndpointHasClipDataBit
+	EndpointHasBeenTransformed = 1 << EndpointHasBeenTransformedBit
+
+	RenderFlagsBufferSize = 8 * cseries.Kilo
+	// from render.c
+	PolygonQueueSize                = 256
+	MaximumVerticiesPerWorldPolygon = MaximumVerticesPerPolygon + 4
+	ExplosionEffectRange            = WorldOne / 12
+	ClipIndexBufferSize             = 4096
+
+	// clip data flags
+	ClipLeftFlag  = 0x0001
+	ClipRightFlag = 0x0002
+	ClipUpFlag    = 0x0003
+	ClipDownFlag  = 0x0004
+
+	// left and right sides of screen
+	Index_LeftSideOfScreen = iota
+	Index_RightSideOfScreen
+	NumberOfInitialEndPointClips
+
+	// top and bottom sides of screen
+	Index_TopAndBottomOfScreen = iota
+	NumberOfInitialLineClips
+
+	MaximumNodes                    = 512
+	MaximumClippingEndpointsPerNode = 4
+	MaximumClippingLinesPerNode     = MaximumVerticesPerPolygon - 2
+
+	MaximumSortedNodes = 128
+
+	MaximumRenderObjects = 72
 )
 
 type Point2d struct {
@@ -74,29 +121,6 @@ type ViewData struct {
 	TerminalModeActive bool
 }
 
-const (
-	// render flags
-	PolygonIsVisibleBit           = iota /* some part of this polygon is horizontally in the view cone */
-	EndpointHasBeenVisitedBit            /* we've already tried to cast a ray out at this endpoint */
-	EndpointIsVisibleBit                 /* this endpoint is horizontally in the view cone */
-	SideIsVisibleBit                     /* this side was crossed while building the tree and should be drawn */
-	LineHasClipDataBit                   /* this line has a valid clip entry */
-	EndpointHasClipDataBit               /* this endpoint has a valid clip entry */
-	EndpointHasBeenTransformedBit        /* this endpoint has been transformed into screen-space */
-	NumberOfRenderFlags                  /* should be <=16 */
-
-	PolygonIsVisible           = 1 << PolygonIsVisibleBit
-	EndpointHasBeenVisited     = 1 << EndpointHasBeenVisitedBit
-	EndpointIsVisible          = 1 << EndpointIsVisibleBit
-	SideIsVisible              = 1 << SideIsVisibleBit
-	LineHasClipData            = 1 << LineHasClipDataBit
-	EndpointHasClipData        = 1 << EndpointHasClipDataBit
-	EndpointHasBeenTransformed = 1 << EndpointHasBeenTransformedBit
-)
-const (
-	RenderFlagsBufferSize = 8 * cseries.Kilo
-)
-
 type renderFlags []cseries.Word
 
 func (this renderFlags) Test(index, flag int16) bool {
@@ -107,14 +131,6 @@ func (this renderFlags) Set(index, flag int16) {
 }
 
 var RenderFlags renderFlags
-
-// from render.c
-const (
-	PolygonQueueSize                = 256
-	MaximumVerticiesPerWorldPolygon = MaximumVerticesPerPolygon + 4
-	ExplosionEffectRange            = WorldOne / 12
-	ClipIndexBufferSize             = 4096
-)
 
 type FlaggedWorldPoint2d struct {
 	WorldPoint2d
@@ -140,30 +156,11 @@ type VerticalSurfaceData struct {
 	TransferMode      int16
 }
 
-const (
-	// clip data flags
-	ClipLeftFlag  = 0x0001
-	ClipRightFlag = 0x0002
-	ClipUpFlag    = 0x0003
-	ClipDownFlag  = 0x0004
-
-	// left and right sides of screen
-	Index_LeftSideOfScreen = iota
-	Index_RightSideOfScreen
-	NumberOfInitialEndPointClips
-)
-
 type EndpointClipData struct {
 	Flags  cseries.Word
 	X      int16
 	Vector WorldVector2d
 }
-
-// top and bottom sides of screen
-const (
-	Index_TopAndBottomOfScreen = iota
-	NumberOfInitialLineClips
-)
 
 type LineClipData struct {
 	Flags  cseries.Word
@@ -185,12 +182,6 @@ func AllocateRenderMemory() error {
 	}
 	return nil
 }
-
-const (
-	MaximumNodes                    = 512
-	MaximumClippingEndpointsPerNode = 4
-	MaximumClippingLinesPerNode     = MaximumVerticesPerPolygon - 2
-)
 
 type NodeData struct {
 	Flags                 cseries.Word
@@ -217,20 +208,12 @@ func NewNodeData(polygonIndex int16, flags cseries.Word, parent *NodeData, refer
 	}
 }
 
-const (
-	MaximumSortedNodes = 128
-)
-
 type SortedNodeData struct {
 	PolygonIndex    int16
 	InteriorObjects []RenderObjectData
 	ExteriorObjects []RenderObjectData
 	ClippingWindows []ClippingWindowData
 }
-
-const (
-	MaximumRenderObjects = 72
-)
 
 type RenderObjectData struct {
 	Node            *SortedNodeData
