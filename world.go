@@ -168,6 +168,18 @@ func GuessDistance(p0, p1 *WorldPoint2d) WorldDistance {
 	}
 }
 
+func Distance3d(p0, p1 *WorldPoint3d) WorldDistance {
+	dx := int32(p0.X - p1.X)
+	dy := int32(p0.Y - p1.Y)
+	dz := int32(p0.Z - p1.Z)
+	distance := ISqrt(dx*dx + dy*dy + dz*dz)
+	if distance > cseries.SHORT_MAX {
+		return cseries.SHORT_MAX
+	} else {
+		return distance
+	}
+}
+
 type WorldPoint3d struct {
 	X WorldDistance
 	Y WorldDistance

@@ -72,3 +72,46 @@ func (this Fixed) IntegralPart() int16 {
 func (this Fixed) FractionalPart() int16 {
 	return int16(Fixed(int16(this)) & (FixedOne - 1))
 }
+
+type Handle interface{}
+
+// constants defined in the cseries lib for emulation purposes
+const (
+	UnsignedLongMax = 4294967295
+	LongMax         = 2147483647
+	LongMin         = -2147483648
+	LongBits        = 32
+
+	UnsignedShortMax = 65535
+	ShortMax         = 32767
+	ShortMin         = -32768
+	ShortBits        = 16
+
+	UnsignedCharMax = 255
+	CharMax         = 127
+	CharMin         = -128
+	CharBits        = 8
+)
+
+// Globals...sigh
+var Temporary [256]byte
+
+// error kinds
+const (
+	FatalError = iota
+	InfoError
+)
+
+func AlertUser(alertType, resourceNumber, errorNumber, identifier int16) {
+
+}
+
+var Debug bool
+
+func ToggleDebugStats() bool {
+	return Debug
+}
+
+func InitializeDebugger(forceDebuggerOn bool) {
+
+}
