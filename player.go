@@ -138,6 +138,26 @@ const (
 	PlayerIsTotallyDeadFlag           = 0x1000
 	PlayerIsZombieFlag                = 0x2000 // IS THIS USED??
 	PlayerIsDeadFlag                  = 0x4000
+
+	// constants from player.c
+	ActionQueueBufferDiameter  = 0x100
+	ActionQueueBufferIndexMask = 0xff
+	KInvisibilityDuration      = 70 * TicksPerSecond
+	KInvincibilityDuration     = 50 * TicksPerSecond
+	KExtravisionDuration       = 3 * TicksPerMinute
+	KInfravisionDuration       = 3 * TicksPerMinute
+
+	MinimumReincarnationDelay = TicksPerSecond
+	NormalReincarnationDelay  = 10 * TicksPerSecond
+	SuicideReincarnationDelay = 15 * TicksPerSecond
+
+	DeadPlayerHeight = WorldOneFourth
+
+	OxygenWarningLevel     = TicksPerMinute
+	OxygenWarningFrequency = TicksPerMinute / 4
+	OxygenWarningOffset    = 10 * TicksPerSecond
+
+	LastLevel = 100
 )
 
 type PhysicsVariables struct {
@@ -235,12 +255,91 @@ type PlayerData struct {
 	Unused [256]int16
 }
 
+type ActionQueue struct {
+	ReadIndex, WriteIndex int16
+
+	Buffer chan int32
+}
+
+type PlayerShapeDefinitions struct {
+	Collection int16
+
+	DyingHard, DyingSoft int16
+	DeadHard, DeadSoft   int16
+	Legs                 [NumberOfPlayerActions]int16 // Stationary, walking, running, sliding, airborne
+	Torsos               [PlayerTorsoShapeCount]int16 // NONE, ..., double pistols
+	ChargingTorsos       [PlayerTorsoShapeCount]int16 // NONE, ..., double pistols
+	FiringTorsos         [PlayerTorsoShapeCount]int16 // NONE, ..., double pistols
+}
+
+type DamageResponseDefinition struct {
+	Type            int16
+	DamageThreshold int16
+
+	Fade                           int16
+	Sound, DeathSound, DeathAction int16
+}
+
 var Players []PlayerData
 
 var LocalPlayerIndex int16
 var CurrentPlayerIndex int16
 var LocalPlayer *PlayerData
 var CurrentPlayer *PlayerData
+
+var ActionQueues *ActionQueue
+
+var playerShapes = PlayerShapeDefinitions{
+	Collection:     6,
+	DyingHard:      9,
+	DyingSoft:      8,
+	DeadHard:       11,
+	DeadSoft:       10,
+	Legs:           [NumberOfPlayerActions]int16{7, 0, 0, 24, 23},                             // legs: stationary, walking, runnning, sliding, airborne
+	Torsos:         [PlayerTorsoShapeCount]int16{1, 3, 20, 26, 14, 12, 31, 16, 28, 33, 5, 18}, // idle torsos: fists, magnum, fusion, assault, rocket, flamethrower, alien, shotgun, double pistol, double shotgun, da ball
+	ChargingTorsos: [PlayerTorsoShapeCount]int16{1, 3, 21, 26, 14, 12, 31, 16, 28, 33, 5, 18}, // charging torsos: fists, magnum, fusion, assault, rocket, flamethrower, alien, shotgun, double pistol, double shotgun, ball
+	FiringTorsos:   [PlayerTorsoShapeCount]int16{2, 4, 22, 27, 15, 13, 32, 17, 28, 34, 6, 19}, // firing torsos: fists, magnum, fusion, assault, rocket, flamethrower, alien, shotgun, double pistol, double shotgun, ball
+}
+
+var playerInitialItems = []int16{
+	ItemMagnum, // First weapon is the weapon he will use...
+	ItemKnife,
+	ItemKnife,
+	ItemMagnumMagazine,
+	ItemMagnumMagazine,
+	ItemMagnumMagazine,
+}
+
+func NumberOfPlayerInitialItems() int {
+	return len(playerInitialItems)
+}
+
+var DamageResponseDefinitions = []DamageResponseDefinition{
+	DamageResponseDefinition{DamageExplosion, 100, FadeYellow, None, SndHumanScream, MonsterIsDyingHard},
+	DamageResponseDefinition{DamageCrushing, None, FadeRed, None, SndHumanWail, MonsterIsDyingHard},
+	DamageResponseDefinition{DamageProjectile, None, FadeRed, None, SndHumanScream, None},
+	DamageResponseDefinition{DamageShotgunProjectile, None, FadeRed, None, SndHumanScream, None},
+	DamageResponseDefinition{DamageElectricalStaff, None, FadeCyan, None, SndHumanScream, None},
+	DamageResponseDefinition{DamageHulkSlap, None, FadeCyan, None, SndHumanScream, None},
+	DamageResponseDefinition{DamageAbsorbed, 100, FadeWhite, SndAbsorbed, None, None},
+	DamageResponseDefinition{DamageTeleporter, 100, FadeWhite, SndAbsorbed, None, None},
+	DamageResponseDefinition{DamageFlame, None, FadeOrange, None, SndHumanWail, MonsterIsDyingFlaming},
+	DamageResponseDefinition{DamageHoundClaws, None, FadeRed, None, SndHumanScream, None},
+	DamageResponseDefinition{DamageCompilerBolt, None, FadeStatic, None, SndHumanScream, None},
+	DamageResponseDefinition{DamageAlienProjectile, None, FadeDodgePurple, None, SndHumanWail, MonsterIsDyingFlaming},
+	DamageResponseDefinition{DamageHunterBolt, None, FadeBurnGreen, None, SndHumanScream, None},
+	DamageResponseDefinition{DamageFusionBolt, 60, FadeNegative, None, SndHumanScream, None},
+	DamageResponseDefinition{DamageFist, 40, FadeRed, None, SndHumanScream, None},
+	DamageResponseDefinition{DamageYetiClaws, None, FadeBurnCyan, None, SndHumanScream, None},
+	DamageResponseDefinition{DamageYetiProjectile, None, FadeDodgeYellow, None, SndHumanScream, None},
+	DamageResponseDefinition{DamageDefender, None, FadePurple, None, SndHumanScream, None},
+	DamageResponseDefinition{DamageLava, None, FadeLongOrange, None, SndHumanWail, MonsterIsDyingFlaming},
+	DamageResponseDefinition{DamageGoo, None, FadeLongGreen, None, SndHumanWail, MonsterIsDyingFlaming},
+	DamageResponseDefinition{DamageSuffocation, None, None, None, SndSuffocation, MonsterIsDyingSoft},
+	DamageResponseDefinition{DamageEnergyDrain, None, None, None, None, None},
+	DamageResponseDefinition{DamageOxygenDrain, None, None, None, None, None},
+	DamageResponseDefinition{DamageHummerBolt, None, FadeFlickerNegative, None, SndHumanScream, None},
+}
 
 func InitializePlayers() {
 

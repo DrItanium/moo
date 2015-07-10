@@ -17,7 +17,7 @@ const (
 	WeaponSmg
 	MaximumNumberOfWeapons
 
-	WeaponDoubleFistedPistols = MaximumNumberOfWeapons // this is a pseudo-weapon
+	WeaponDoubleFistedPistols = iota + MaximumNumberOfWeapons // this is a pseudo-weapon
 	WeaponDoubleFistedShotguns
 	PlayerTorsoShapeCount
 
