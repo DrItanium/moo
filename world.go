@@ -152,38 +152,60 @@ func (this *WorldPoint2d) Transform(origin *WorldPoint2d, theta Angle) error {
 	}
 }
 
-func GuessDistance(p0, p1 *WorldPoint2d) WorldDistance {
-	dx := int64(p0.X) - int64(p1.X)
-	dy := int64(p0.Y) - int64(p1.Y)
-	if dx < 0 {
-		dx = -dx
-	}
-	if dy < 0 {
-		dy = -dy
-	}
-	if distance := GuessHypotenuse(dx, dy); distance > 32767 {
-		return WorldDistance(32767)
-	} else {
-		return WorldDistance(distance)
-	}
-}
-
-func Distance3d(p0, p1 *WorldPoint3d) WorldDistance {
-	dx := int32(p0.X - p1.X)
-	dy := int32(p0.Y - p1.Y)
-	dz := int32(p0.Z - p1.Z)
-	distance := ISqrt(dx*dx + dy*dy + dz*dz)
-	if distance > cseries.SHORT_MAX {
-		return cseries.SHORT_MAX
-	} else {
-		return distance
-	}
-}
-
 type WorldPoint3d struct {
 	X WorldDistance
 	Y WorldDistance
 	Z WorldDistance
+}
+
+func (this *WorldPoint3d) Transform(origin *WorldPoint3d, theta, phi Angle) error {
+	var temp WorldPoint3d
+	temp.X = this.X - origin.X
+	temp.Y = this.Y - origin.Y
+	temp.Z = this.Z - origin.Z
+
+	// do theta rotation (in x-y plane)
+	this.X = ((temp.X * WorldDistance(CosineTable[theta])) >> TrigShift) + ((temp.Y * WorldDistance(SineTable[theta])) >> TrigShift)
+	this.Y = ((temp.Y * WorldDistance(CosineTable[theta])) >> TrigShift) - ((temp.X * WorldDistance(SineTable[theta])) >> TrigShift)
+
+	// do phi rotation (in x-z plane)
+	if phi != 0 {
+		temp.X = this.X
+
+		// temp.z is already set
+		this.X = ((temp.X * WorldDistance(CosineTable[phi])) >> TrigShift) + ((temp.Z * WorldDistance(SineTable[phi])) >> TrigShift)
+		this.Z = ((temp.Z * WorldDistance(CosineTable[phi])) >> TrigShift) - ((temp.X * WorldDistance(SineTable[phi])) >> TrigShift)
+		// y-coordinate is unchanged
+	} else {
+		this.Z = temp.X
+	}
+	return nil
+}
+func checkAngleRange(value Angle, varName, function string) error {
+	if !(value >= 0 && value < NumberOfAngles) {
+		return &cseries.AssertionError{
+			Function: function,
+			Message:  fmt.Sprintf("Angle %s (%d) is not in the range of 0, %d", varName, value, NumberOfAngles),
+		}
+	} else {
+		return nil
+	}
+}
+func (this *WorldPoint3d) Translate(distance WorldDistance, theta, phi Angle) error {
+	var transformedDistance WorldDistance
+	if err := checkAngleRange(theta, "theta", "WorldPoint3d.Translate"); err != nil {
+		return err
+	}
+	if err := checkAngleRange(phi, "phi", "WorldPoint3d.Translate"); err != nil {
+		return err
+	}
+
+	transformedDistance = (distance * WorldDistance(CosineTable[phi])) >> TrigShift
+	this.X += (transformedDistance * WorldDistance(CosineTable[theta])) >> TrigShift
+	this.Y += (transformedDistance * WorldDistance(SineTable[theta])) >> TrigShift
+	this.Z += (distance * WorldDistance(SineTable[phi])) >> TrigShift
+
+	return nil
 }
 
 type FixedPoint3d struct {
@@ -456,4 +478,37 @@ func LocalRandom() cseries.Word {
 
 	localRandomSeed = seed
 	return seed
+}
+func GuessDistance(p0, p1 *WorldPoint2d) WorldDistance {
+	dx := int64(p0.X) - int64(p1.X)
+	dy := int64(p0.Y) - int64(p1.Y)
+	if dx < 0 {
+		dx = -dx
+	}
+	if dy < 0 {
+		dy = -dy
+	}
+	if distance := GuessHypotenuse(dx, dy); distance > 32767 {
+		return WorldDistance(32767)
+	} else {
+		return WorldDistance(distance)
+	}
+}
+
+func Distance3d(p0, p1 *WorldPoint3d) WorldDistance {
+	dx := int32(p0.X - p1.X)
+	dy := int32(p0.Y - p1.Y)
+	dz := int32(p0.Z - p1.Z)
+	distance := WorldDistance(ISqrt(uint32(dx*dx + dy*dy + dz*dz)))
+	if distance > cseries.ShortMax {
+		return cseries.ShortMax
+	} else {
+		return distance
+	}
+}
+
+func Distance2d(p0, p1 *WorldPoint2d) WorldDistance {
+	dx := p0.X - p1.X
+	dy := p0.Y - p1.Y
+	return WorldDistance(ISqrt(uint32(dx*dx + dy*dy)))
 }
