@@ -90,19 +90,11 @@ type WorldPoint2d struct {
 	Y WorldDistance
 }
 
-type FunctionError struct {
-	Function string
-	Message  string
-}
-
-func (this FunctionError) Error() string {
-	return fmt.Sprintf("%s: %s", this.Function, this.Message)
-}
 func checkTheta(theta Angle) error {
 	if !(theta >= 0 && theta < NumberOfAngles) {
-		return &FunctionError{
-			Function: "WorldPoint2d.Translate",
-			Message:  "Theta is less than zero or theta >= Number of angles!",
+		return &cseries.AssertionError{
+			Function: "checkTheta",
+			Message:  fmt.Sprintf("Theta is less than zero or greater than %d!", NumberOfAngles),
 		}
 	} else {
 		return nil
@@ -110,8 +102,8 @@ func checkTheta(theta Angle) error {
 }
 func checkCosineTable() error {
 	if CosineTable[0] != TrigMagnitude {
-		return &FunctionError{
-			Function: "WorldPoint2d.Translate",
+		return &cseries.AssertionError{
+			Function: "checkCosineTable",
 			Message:  fmt.Sprintf("CosineTable[0] != TrigMagnitude, Actual Value is: %d", CosineTable[0]),
 		}
 	} else {
