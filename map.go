@@ -31,3 +31,11 @@ type SideTextureDefinition struct {
 	X0, Y0  WorldDistance
 	Texture ShapeDescriptor
 }
+
+type ObjectLocation struct {
+	P            WorldPoint3d
+	PolygonIndex int16
+
+	Yaw, Pitch Angle
+	Flags      cseries.Word
+}
