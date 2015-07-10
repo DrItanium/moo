@@ -10,3 +10,5 @@ type ItemDefinition struct {
 }
 
 var ItemDefinitions []ItemDefinition
+
+//TODO: fill in item definitions
