@@ -24,9 +24,45 @@ const (
 
 	LevelNameLength = 64 + 1
 
+	// damage types
+	DamageExplosion = iota
+	DamageElectricalStaff
+	DamageProjectile
+	DamageAbsorbed
+	DamageFlame
+	DamageHoundClaws
+	DamageAlienProjectile
+	DamageHulkSlap
+	DamageCompilerBolt
+	DamageFusionBolt
+	DamageHunterBolt
+	DamageFist
+	DamageTeleporter
+	DamageDefender
+	DamageYetiClaws
+	DamageYetiProjectile
+	DamageCrushing
+	DamageLava
+	DamageSuffocation
+	DamageGoo
+	DamageEnergyDrain
+	DamageOxygenDrain
+	DamageHummerBolt
+	DamageShotgunProjectile
+
+	// damage flags
+	AlienDAmage = 0x1
+
 	MaximumVerticesPerPolygon = 8
 )
 
+type DamageDefinition struct {
+	Type   int16
+	Flags  int16
+	Base   int16
+	Random int16
+	Scale  cseries.Fixed
+}
 type SideTextureDefinition struct {
 	X0, Y0  WorldDistance
 	Texture ShapeDescriptor

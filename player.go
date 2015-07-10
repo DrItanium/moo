@@ -234,3 +234,153 @@ type PlayerData struct {
 
 	Unused [256]int16
 }
+
+var Players []PlayerData
+
+var LocalPlayerIndex int16
+var CurrentPlayerIndex int16
+var LocalPlayer *PlayerData
+var CurrentPlayer *PlayerData
+
+func InitializePlayers() {
+
+}
+func ResetPlayerQueues() {
+
+}
+
+func AllocatePlayerMemory() {
+
+}
+
+func SetLocalPlayerIndex(playerIndex int16) {
+
+}
+
+func SetCurrentPlayerIndex(playerIndex int16) {
+
+}
+
+func NewPlayer(team, color, playerIdentifier int16) int16 {
+	return 0
+}
+
+func DeletePlayer(playerNumber int16) {
+
+}
+
+func RecreatePlayersForNewLevel() {
+
+}
+
+func UpdatePlayers() {
+
+}
+
+/* Assumes �t==1 Tick */
+
+func WalkPlayerList() {
+
+}
+
+func QueueActionFlags(playerIndex int16, actionFlags *int32, count int16) {
+
+}
+
+func DequeueActionFlags(playerIndex int16) int32 {
+
+	return 0
+}
+
+func GetActionQueueSize(playerIndex int16) int16 {
+	return 0
+
+}
+
+func DamagePlayer(monsterIndex, aggressorIndex, aggressorType int16, damage *DamageDefinition) {
+
+}
+
+func MarkPlayerCollections(loading bool) {
+
+}
+
+func PlayerIdentifierToPlayerIndex(playerId int16) int16 {
+	return 0
+
+}
+
+func GetPlayerData(playerId int16) *PlayerData {
+	return nil
+
+}
+
+//#Define GetPlayerData(I) (Players+(I))
+
+func MonsterIndexToPlayerIndex(monsterIndex int16) int16 {
+	return 0
+
+}
+
+func GetPolygonIndexSupportingPlayer(playerIndex int16) int16 {
+	return 0
+
+}
+
+func LegalPlayerPowerup(itemIndex, playerIndex int16) bool {
+	return false
+
+}
+
+func ProcessPlayerPowerup(playerIndex, itemIndex int16) {
+
+}
+
+func DeadPlayerMinimumPolygonHeight(polygonIndex int16) WorldDistance {
+	return 0
+}
+
+func TryAndSubtractPlayerItem(playerIndex, itemType int16) bool {
+	return false
+}
+
+func InitializePlayerPhysicsVariables(playerIndex int16) {
+
+}
+
+func UpdatePlayerPhysicsVariables(playerIndex int16, actionFlags int32) {
+
+}
+
+func AdjustPlayerForPolygonHeightChange(monsterIndex, polygonIndex int16, newFloorHeight, newCeilingHeight WorldDistance) {
+
+}
+
+func AcceleratePlayer(monsterIndex int16, verticalVelocity WorldDistance, direction Angle, velocity WorldDistance) {
+
+}
+
+func KillPlayerPhysicsVariables(playerIndex int16) {
+
+}
+
+func MaskInAbsolutePositioningInformation(actionFlags int32, yaw, pitch, velocity cseries.Fixed) int32 {
+	return 0
+}
+
+func GetAbsolutePitchRange(min, max *cseries.Fixed) {
+
+}
+
+func InstantiateAbsolutePositioningInformation(playerIndex int16, facing, elevation cseries.Fixed) {
+
+}
+
+func GetBinocularVisionOrigins(playerIndex int16, left *WorldPoint3d, leftPolygonIndex *int16, leftAngle *Angle, right *WorldPoint3d, rightPolygonIndex *int16, rightAngle *Angle) {
+
+}
+
+func GetPlayerForwardVelocityScale(PlayerIndex int16) cseries.Fixed {
+	return cseries.FixedOne
+
+}
