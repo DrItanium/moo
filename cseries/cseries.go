@@ -33,7 +33,29 @@ func (n Word) Pin(floor, ceiling Word) Word {
 	}
 }
 
-func Signum(x int) int {
+func Pin(n, floor, ceiling int64) int64 {
+	if n < floor {
+		return floor
+	} else {
+		return Ceiling(n, ceiling)
+	}
+}
+func Floor(n, floor int64) int64 {
+	if n < floor {
+		return floor
+	} else {
+		return n
+	}
+}
+func Ceiling(n, ceiling int64) int64 {
+	if n > ceiling {
+		return ceiling
+	} else {
+		return n
+	}
+}
+
+func Signum(x int64) int64 {
 	if x < 0 {
 		return -1
 	} else if x > 0 {
@@ -43,7 +65,7 @@ func Signum(x int) int {
 	}
 }
 
-func Abs(x int) int {
+func Abs(x int64) int64 {
 	if x >= 0 {
 		return x
 	} else {
@@ -51,7 +73,7 @@ func Abs(x int) int {
 	}
 }
 
-func Min(x, y int) int {
+func Min(x, y int64) int64 {
 	if x > y {
 		return y
 	} else {
@@ -59,7 +81,7 @@ func Min(x, y int) int {
 	}
 }
 
-func Max(x, y int) int {
+func Max(x, y int64) int64 {
 	if x > y {
 		return x
 	} else {
