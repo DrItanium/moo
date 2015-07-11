@@ -2,6 +2,7 @@
 package moo
 
 import (
+	"fmt"
 	"github.com/DrItanium/moo/cseries"
 )
 
@@ -75,7 +76,7 @@ func FadesRandom() cseries.Word {
 	return FadesRandomSeed
 }
 
-type FadeProcedure func(*ColorTable, *ColorTable, *RgbColor, cseries.Fixed)
+type FadeProcedure func(ColorTable, ColorTable, *RgbColor, cseries.Fixed)
 
 type FadeEffectDefinition struct {
 	Index        int16
@@ -92,11 +93,11 @@ type FadeDefinition struct {
 	Priority int16 // higher is higher
 }
 
-func (this *FadeDefinition) FadeIsActive() bool {
+func (this *FadeDefinition) IsActive() bool {
 	return this.Flags&cseries.Word(0x8000) != 0
 }
 
-func (this *FadeDefinition) SetFadeIsActive(result bool) {
+func (this *FadeDefinition) SetActive(result bool) {
 	if result {
 		this.Flags |= cseries.Word(0x8000)
 	} else {
@@ -107,39 +108,39 @@ func (this *FadeDefinition) SetFadeIsActive(result bool) {
 type FadeData struct {
 	Flags cseries.Word // [active.1] [unused.15]
 
-	Type           int16
-	FadeEffectType int16
+	Type       int16
+	EffectType int16
 
 	StartTick      int32
 	LastUpdateTick int32
 
-	OriginalColorTable *ColorTable
-	AnimatedColorTable *ColorTable
+	OriginalColorTable ColorTable
+	AnimatedColorTable ColorTable
 }
 
 var Fade *FadeData
 
-func TintColorTable(original, animated *ColorTable, color *RgbColor, transparency cseries.Fixed) {
+func TintColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
 
 }
 
-func RandomizeColorTable(original, animated *ColorTable, color *RgbColor, transparency cseries.Fixed) {
+func RandomizeColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
 
 }
 
-func NegateColorTable(original, animated *ColorTable, color *RgbColor, transparency cseries.Fixed) {
+func NegateColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
 
 }
 
-func DodgeColorTable(original, animated *ColorTable, color *RgbColor, transparency cseries.Fixed) {
+func DodgeColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
 
 }
 
-func BurnColorTable(original, animated *ColorTable, color *RgbColor, transparency cseries.Fixed) {
+func BurnColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
 
 }
 
-func SoftTintColorTable(original, animated *ColorTable, color *RgbColor, transparency cseries.Fixed) {
+func SoftTintColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
 
 }
 
@@ -199,42 +200,141 @@ var ActualGammaValues = [NumberOfGammaLevels]float32{
 	0.70,
 }
 
-func InitializeFades() {
+func GetFadeDefinition(index int16) *FadeDefinition {
+	return nil
+}
+func GetFadeEffectDefinition(index int16) *FadeEffectDefinition {
+	return nil
+}
 
+func RecalculateAndDisplayColorTable(fadeType int16, transparency cseries.Fixed, original, animated ColorTable) {
+
+}
+func InitializeFades() {
+	Fade = new(FadeData)
+	Fade.SetActive(false)
+	Fade.FadeEffectType = cseries.None
 }
 
 func UpdateFades() bool {
-	return false
+	if Fade.IsActive() {
+		definition := GetFadeDefinition(Fade.Type)
+		tickCount := MachineTickCount()
+		update := false
+		var transparency cseries.Fixed
+		phase := tickCount - Fade.StartTick
+		if phase >= definition.Period {
+			transparency = definition.FinalTransparency
+			Fade.SetActive(false)
+			update = true
+		} else {
+			if tickCount.LastUpdateTick >= MinimumFadeUpdateTicks {
+				transparency = definition.InitialTransparency + (phase*(definition.FinalTransparency-definition.InitialTransparency))/definition.Period
+				if (definition.Flags & RandomTransparencyFlag) != 0 {
+					transparency += FadesRandom() % (definition.FinalTransparency - transparency)
+				}
+				update = TRUE
+			}
+			if update {
+				RecalculateAndDisplayColorTable(Fade.Type, transparency, Fade.OriginalColorTable, Fade.AnimatedColorTable)
+			}
+		}
+
+	}
+	return Fade.IsActive()
 }
 
+func SetFadeEffect(fade int16) {
+	if Fade.EffectType != fade {
+		Fade.EffectType = fade
+		if !Fade.IsActive() {
+			if fade == cseries.None {
+				AnimateScreenClut(WorldColorTable, false)
+			} else {
+				RecalculateAndDisplayColorTable(cseries.None, 0, WorldColorTable, VisibleColorTable)
+			}
+		}
+	}
+}
 func StartFade(fade int16) {
+	ExplicitStartFade(fade, WorldColorTable, VisibleColorTable)
+}
+
+func ExplicitStartFade(fade int16, originalColorTable, animatedColorTable ColorTable) {
+	definition := GetFadeDefinition(fade)
+	tickCount := MachineTickCount()
+	doFade := true
+
+	if Fade.IsActive() {
+		oldDefinition := GetFadeDefinition(fade.Type)
+		if oldDefinition.Priority > definition.Priority {
+			doFade = false
+		}
+
+		if ((tickCount - Fade.StartTick) > MinimumFadeRestartTicks) && Fade.Type == fade {
+			doFade = false
+		}
+	}
+
+	if doFade {
+		Fade.SetActive(false)
+
+		RecalculateAndDisplayColorTable(fade, definition.InitialTransparency, originalColorTable, animatedColorTable)
+		if definition.Period != 0 {
+			Fade.Type = fade
+			Fade.LastUpdateTick = tickCount
+			Fade.StartTick = tickCount
+			Fade.OriginalColorTable = originalColorTable
+			Fade.AnimatedColorTable = animatedColorTable
+			Fade.SetActive(true)
+		}
+	}
 
 }
 
 func StopFade() {
-
+	if Fade.IsActive() {
+		RecalculateAndDisplayColorTable(Fade.Type, GetFadeDefinition(Fade.Type).FinalTransparency, Fade.OriginalColorTable, Fade.AnimatedColorTable)
+		Fade.SetActive(false)
+	}
 }
 
 func FadeFinished() bool {
-	return false
+	return !Fade.IsActive()
 }
 
-func SetFadeEffect(fade int16) {
+func FullFade(fade int16, original ColorTable) {
+	animated := make(ColorTable, 0, 256)
+	copy(animated[0:len(original)], original)
 
+	// If draw sprocket support isn't there
+	ExplicitStartFade(fade, original, animated)
+	for UpdateFades() {
+	}
+}
+func GetFadePeriod(fade int16) int16 {
+	return GetFadeDefinition(fade).Period
+}
+
+func GammaCorrectColorTable(uncorrected, corrected ColorTable, gammaLevel int16) error {
+	var gamma float32
+	if !(gammaLevel >= 0 && gammaLevel < NumberOfGammaLevels) {
+		return &cseries.AssertionError{
+			Function: "GamaCorrectColorTable",
+			Message:  fmt.Sprintf("Gamma level (%d) is not between [0,%d)", gammaLevel, NumberOfGammaLevels),
+		}
+	}
+	gamma = ActualGammaValues[gammaLevel]
+
+	for i := 0; i < len(uncorrected); i++ {
+		corrected[i].Red = Math.Pow(uncorrected[i].Red/65535.0, gamma) * 65535.0
+		corrected[i].Green = Math.Pow(uncorrected[i].Green/65535.0, gamma) * 65535.0
+		corrected[i].Blue = Math.Pow(uncorrected[i].Blue/65535.0, gamma) * 65535.0
+	}
+
+	return nil
 }
 
 func GetFadeEffect() int16 {
 	return 0
-}
-
-func GammaCorrectColorTable(uncorrectedColorTable, correctedColorTable *ColorTable, gammaLevel int16) {
-
-}
-
-func ExplicitStartFade(fade int16, originalColorTable, animatedColorTable *ColorTable) {
-
-}
-
-func FullFade(fade int16, originalColorTable *ColorTable) {
-
 }

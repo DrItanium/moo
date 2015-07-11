@@ -80,11 +80,7 @@ type RgbColor struct {
 	Green cseries.Word
 	Blue  cseries.Word
 }
-
-type ColorTable struct {
-	Count  int16
-	Colors [256]RgbColor
-}
+type ColorTable []RgbColor // use make to simulate a capacity and length
 
 // bitmap flags
 const (
