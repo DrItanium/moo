@@ -498,11 +498,11 @@ func BurnColorTable(original, animated ColorTable, color *RgbColor, transparency
 		g := original[i].Green
 		b := original[i].Blue
 		component := computeComponent(r, color.Red, transparency)
-		animated[i].Red = cseries.Word(customCeiling(int32(r), component))
+		animated[i].Red = updateElement(r, component)
 		component = computeComponent(g, color.Green, transparency)
-		animated[i].Green = cseries.Word(customCeiling(int32(g), component))
+		animated[i].Green = updateElement(g, component)
 		component = computeComponent(b, color.Blue, transparency)
-		animated[i].Blue = cseries.Word(customCeiling(int32(b), component))
+		animated[i].Blue = updateElement(b, component)
 	}
 
 	//component= ((color->red*unadjusted->red)>>FIXED_FRACTIONAL_BITS) + transparency, adjusted->red= CEILING(component, unadjusted->red);
