@@ -453,5 +453,20 @@ func BurnColorTable(original, animated ColorTable, color *RgbColor, transparency
 }
 
 func SoftTintColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
+	adjustedTransparency := cseries.Word(transparency >> AdjustedTransparencyDownshift)
+	fn := func(x, y, z, w cseries.Word) cseries.Word {
+		return cseries.Word(x + (((((y * w) >> (cseries.FixedFractionalBits - AdjustedTransparencyDownshift)) - x) * z) >> (cseries.FixedFractionalBits - AdjustedTransparencyDownshift)))
+	}
+	for i := 0; i < len(original); i++ {
+		intensity := cseries.Word(cseries.Max(original[i].Red, original[i].Green))
+		intensity = cseries.Word(cseries.Max(intensity, original[i].Blue) >> AdjustedTransparencyDownshift)
 
+		animated[i].Red = fn(original[i].Red, color.Red, adjustedTransparency, intensity)
+		animated[i].Green = fn(original[i].Green, color.Green, adjustedTransparency, intensity)
+		animated[i].Blue = fn(original[i].Blue, color.Blue, adjustedTransparency, intensity)
+
+	}
+	//adjusted->red= unadjusted->red + (((((color->red*intensity)>>(FIXED_FRACTIONAL_BITS-ADJUSTED_TRANSPARENCY_DOWNSHIFT))-unadjusted->red)*adjusted_transparency)>>(FIXED_FRACTIONAL_BITS-ADJUSTED_TRANSPARENCY_DOWNSHIFT));
+	//adjusted->green= unadjusted->green + (((((color->green*intensity)>>(FIXED_FRACTIONAL_BITS-ADJUSTED_TRANSPARENCY_DOWNSHIFT))-unadjusted->green)*adjusted_transparency)>>(FIXED_FRACTIONAL_BITS-ADJUSTED_TRANSPARENCY_DOWNSHIFT));
+	//adjusted->blue= unadjusted->blue + (((((color->blue*intensity)>>(FIXED_FRACTIONAL_BITS-ADJUSTED_TRANSPARENCY_DOWNSHIFT))-unadjusted->blue)*adjusted_transparency)>>(FIXED_FRACTIONAL_BITS-ADJUSTED_TRANSPARENCY_DOWNSHIFT));
 }
