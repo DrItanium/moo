@@ -120,30 +120,6 @@ type FadeData struct {
 
 var Fade *FadeData
 
-func TintColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
-
-}
-
-func RandomizeColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
-
-}
-
-func NegateColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
-
-}
-
-func DodgeColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
-
-}
-
-func BurnColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
-
-}
-
-func SoftTintColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
-
-}
-
 var FadeDefinitions = [NumberOfFadeTypes]FadeDefinition{
 	{TintColorTable, RgbColor{0, 0, 0}, cseries.FixedOne, cseries.FixedOne, 0, FullScreenFlag, 0},                      /* StartCinematicFadeIn */
 	{TintColorTable, RgbColor{0, 0, 0}, cseries.FixedOne, 0, cseries.MachineTicksPerSecond / 2, FullScreenFlag, 0},     /* CinematicFadeIn */
@@ -207,9 +183,6 @@ func GetFadeEffectDefinition(index int16) *FadeEffectDefinition {
 	return nil
 }
 
-func RecalculateAndDisplayColorTable(fadeType int16, transparency cseries.Fixed, original, animated ColorTable) {
-
-}
 func InitializeFades() {
 	Fade = new(FadeData)
 	Fade.SetActive(false)
@@ -334,7 +307,67 @@ func GammaCorrectColorTable(uncorrected, corrected ColorTable, gammaLevel int16)
 
 	return nil
 }
+func GetFadeDefinition(index int16) (*FadeDefinition, error) {
+	if !(index >= 0 && index < NumberOfFadeTypes) {
+		return nil, &cseries.AssertionError{
+			Function: "GetFadeDefinition",
+			Message:  fmt.Sprintf("Index (%d) is not in the valid fade type range of [0,%d)", index, NumberOfFadeTypes),
+		}
+	}
 
-func GetFadeEffect() int16 {
-	return 0
+	return &FadeDefinitions[index], nil
+}
+
+func GetFadeEffectDefinition(index int16) (*FadeEffectDefinition, error) {
+	if !(index >= 0 && index < NumberOfFadeEffectTypes) {
+		return nil, &cseries.AssertionError{
+			Function: "GetFadeEffectDefinition",
+			Message:  fmt.Sprintf("Index (%d) is not in the valid fade effect type range of [0,%d)", index, NumberOfFadeEffectTypes),
+		}
+	}
+
+	return &FadeEffectDefinitions[index], nil
+}
+
+func RecalculateAndDisplayColorTable(fadeType int16, transparency cseries.Fixed, original, animated ColorTable) {
+	fullScreen := false
+
+	if Fade.EffectType != cseries.None {
+		effectDefinition := GetFadeEffectDefinition(Fade.EffectType)
+		definition := GetFadeDefinition(effectDefinition.FadeType)
+
+		definition.Proc(originalColorTable, animatedColorTable, &definition.Color, effectDefinition.Transparency)
+		originalColorTable = animatedColorTable
+	}
+
+	if fadeType != cseries.None {
+		definition := GetFadeDefinition(fadeType)
+		definition.Proc(originalColorTable, animatedColorTable, &definition.Color, transparency)
+		fullScreen = (definition.Flags & FullScreenFlag) != 0
+	}
+	AnimateScreenClut(animatedColorTable, fullScreen)
+}
+
+func TintColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
+
+}
+
+func RandomizeColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
+
+}
+
+func NegateColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
+
+}
+
+func DodgeColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
+
+}
+
+func BurnColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
+
+}
+
+func SoftTintColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
+
 }
