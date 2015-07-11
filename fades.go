@@ -4,6 +4,7 @@ package moo
 import (
 	"fmt"
 	"github.com/DrItanium/moo/cseries"
+	"math"
 )
 
 const (
@@ -79,7 +80,7 @@ func FadesRandom() cseries.Word {
 type FadeProcedure func(ColorTable, ColorTable, *RgbColor, cseries.Fixed)
 
 type FadeEffectDefinition struct {
-	Index        int16
+	Type         int16
 	Transparency cseries.Fixed
 }
 
@@ -111,8 +112,8 @@ type FadeData struct {
 	Type       int16
 	EffectType int16
 
-	StartTick      int32
-	LastUpdateTick int32
+	StartTick      int64
+	LastUpdateTick int64
 
 	OriginalColorTable ColorTable
 	AnimatedColorTable ColorTable
@@ -206,13 +207,13 @@ func UpdateFades() (bool, error) {
 		}
 		update := false
 		var transparency cseries.Fixed
-		phase := int16(int32(tickCount) - Fade.StartTick) // hmmm, this could be a problem
+		phase := int16(tickCount - Fade.StartTick) // hmmm, this could be a problem
 		if phase >= definition.Period {
 			transparency = definition.FinalTransparency
 			Fade.SetActive(false)
 			update = true
 		} else {
-			if (int32(tickCount) - Fade.LastUpdateTick) >= MinimumFadeUpdateTicks {
+			if (tickCount - Fade.LastUpdateTick) >= MinimumFadeUpdateTicks {
 				transparency = definition.InitialTransparency + (cseries.Fixed(phase)*(definition.FinalTransparency-definition.InitialTransparency))/cseries.Fixed(definition.Period)
 				if (definition.Flags & RandomTransparencyFlag) != 0 {
 					transparency += cseries.Fixed(FadesRandom()) % (definition.FinalTransparency - transparency)
@@ -245,7 +246,10 @@ func StartFade(fade int16) error {
 }
 
 func ExplicitStartFade(fade int16, originalColorTable, animatedColorTable ColorTable) error {
-	definition := GetFadeDefinition(fade)
+	definition, err1 := GetFadeDefinition(fade)
+	if err1 != nil {
+		return err1
+	}
 	tickCount, err0 := cseries.MachineTickCount()
 	if err0 != nil {
 		return err0
@@ -253,7 +257,10 @@ func ExplicitStartFade(fade int16, originalColorTable, animatedColorTable ColorT
 	doFade := true
 
 	if Fade.IsActive() {
-		oldDefinition := GetFadeDefinition(fade.Type)
+		oldDefinition, err2 := GetFadeDefinition(Fade.Type)
+		if err2 != nil {
+			return err2
+		}
 		if oldDefinition.Priority > definition.Priority {
 			doFade = false
 		}
@@ -279,28 +286,43 @@ func ExplicitStartFade(fade int16, originalColorTable, animatedColorTable ColorT
 	return nil
 }
 
-func StopFade() {
+func StopFade() error {
 	if Fade.IsActive() {
-		RecalculateAndDisplayColorTable(Fade.Type, GetFadeDefinition(Fade.Type).FinalTransparency, Fade.OriginalColorTable, Fade.AnimatedColorTable)
+		defn, err := GetFadeDefinition(Fade.Type)
+		if err != nil {
+			return err
+		}
+		RecalculateAndDisplayColorTable(Fade.Type, defn.FinalTransparency, Fade.OriginalColorTable, Fade.AnimatedColorTable)
 		Fade.SetActive(false)
 	}
+	return nil
 }
 
 func FadeFinished() bool {
 	return !Fade.IsActive()
 }
 
-func FullFade(fade int16, original ColorTable) {
+func FullFade(fade int16, original ColorTable) error {
 	animated := make(ColorTable, 0, 256)
 	copy(animated[0:len(original)], original)
 
 	// If draw sprocket support isn't there
 	ExplicitStartFade(fade, original, animated)
-	for UpdateFades() {
+	for {
+		if result, err := UpdateFades(); err != nil {
+			return err
+		} else if !result {
+			break
+		}
 	}
+	return nil
 }
-func GetFadePeriod(fade int16) int16 {
-	return GetFadeDefinition(fade).Period
+func GetFadePeriod(fade int16) (int16, error) {
+	if defn, err := GetFadeDefinition(fade); err != nil {
+		return 0, err
+	} else {
+		return defn.Period, nil
+	}
 }
 
 func GammaCorrectColorTable(uncorrected, corrected ColorTable, gammaLevel int16) error {
@@ -313,10 +335,13 @@ func GammaCorrectColorTable(uncorrected, corrected ColorTable, gammaLevel int16)
 	}
 	gamma = ActualGammaValues[gammaLevel]
 
+	fn := func(value cseries.Word, g float32) cseries.Word {
+		return cseries.Word(math.Pow(float64(value/65535.0), float64(g)) * 65535.0)
+	}
 	for i := 0; i < len(uncorrected); i++ {
-		corrected[i].Red = Math.Pow(uncorrected[i].Red/65535.0, gamma) * 65535.0
-		corrected[i].Green = Math.Pow(uncorrected[i].Green/65535.0, gamma) * 65535.0
-		corrected[i].Blue = Math.Pow(uncorrected[i].Blue/65535.0, gamma) * 65535.0
+		corrected[i].Red = fn(uncorrected[i].Red, gamma)
+		corrected[i].Green = fn(uncorrected[i].Green, gamma)
+		corrected[i].Blue = fn(uncorrected[i].Blue, gamma)
 	}
 
 	return nil
@@ -343,29 +368,39 @@ func GetFadeEffectDefinition(index int16) (*FadeEffectDefinition, error) {
 	return &FadeEffectDefinitions[index], nil
 }
 
-func RecalculateAndDisplayColorTable(fadeType int16, transparency cseries.Fixed, original, animated ColorTable) {
+func RecalculateAndDisplayColorTable(fadeType int16, transparency cseries.Fixed, original, animated ColorTable) error {
 	fullScreen := false
 
 	if Fade.EffectType != cseries.None {
-		effectDefinition := GetFadeEffectDefinition(Fade.EffectType)
-		definition := GetFadeDefinition(effectDefinition.FadeType)
+		effectDefinition, err0 := GetFadeEffectDefinition(Fade.EffectType)
+		if err0 != nil {
+			return err0
+		}
+		definition, err1 := GetFadeDefinition(effectDefinition.Type)
+		if err1 != nil {
+			return err1
+		}
 
-		definition.Proc(originalColorTable, animatedColorTable, &definition.Color, effectDefinition.Transparency)
-		originalColorTable = animatedColorTable
+		definition.Proc(original, animated, &definition.Color, effectDefinition.Transparency)
+		original = animated
 	}
 
 	if fadeType != cseries.None {
-		definition := GetFadeDefinition(fadeType)
-		definition.Proc(originalColorTable, animatedColorTable, &definition.Color, transparency)
+		definition, err0 := GetFadeDefinition(fadeType)
+		if err0 != nil {
+			return err0
+		}
+		definition.Proc(original, animated, &definition.Color, transparency)
 		fullScreen = (definition.Flags & FullScreenFlag) != 0
 	}
-	AnimateScreenClut(animatedColorTable, fullScreen)
+	AnimateScreenClut(animated, fullScreen)
+	return nil
 }
 
 func TintColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
 	adjustedTransparency := transparency >> AdjustedTransparencyDownshift
 	fn := func(unadjustedValue, colorValue cseries.Word) cseries.Word {
-		return unadjustedValue + (((colorValue - unadjustedValue) * adjustedTransparency) >> (cseries.FixedFractionalBits - AdjustedTransparencyDownshift))
+		return cseries.Word(cseries.Fixed(unadjustedValue) + ((cseries.Fixed(colorValue-unadjustedValue) * adjustedTransparency) >> (cseries.FixedFractionalBits - AdjustedTransparencyDownshift)))
 	}
 	for i := 0; i < len(original); i++ {
 		animated[i].Red = fn(original[i].Red, color.Red)
@@ -378,7 +413,7 @@ func RandomizeColorTable(original, animated ColorTable, color *RgbColor, transpa
 	var mask cseries.Word
 	adjustedTransparency := transparency.Pin(0, 0xffff)
 	// calculate a mask which has all bits including and lower than the high-bit in the transparency set
-	for mask = 0; (adjustedTransparency &^ mask) != 0; mask = (mask << 1) | 1 {
+	for mask = 0; (cseries.Word(adjustedTransparency) &^ mask) != 0; mask = (mask << 1) | 1 {
 		// empty loop body
 	}
 	fn := func(value, mask cseries.Word) cseries.Word {
@@ -398,10 +433,10 @@ func NegateColorTable(original, animated ColorTable, color *RgbColor, transparen
 	fn := func(ov, cv cseries.Word) cseries.Word {
 		var tmp cseries.Word
 		if ov > 0x8000 {
-			tmp = (ov ^ cv) + transparency
+			tmp = (ov ^ cv) + cseries.Word(transparency)
 			return tmp.Ceiling(ov)
 		} else {
-			tmp = (ov ^ cv) - transparency
+			tmp = (ov ^ cv) - cseries.Word(transparency)
 			return tmp.Floor(ov)
 		}
 	}
@@ -421,7 +456,7 @@ func DodgeColorTable(original, animated ColorTable, color *RgbColor, transparenc
 		}
 	}
 	computeComponent := func(unadjusted, color cseries.Word) int32 {
-		return 0xffff - (((color ^ 0xffff) * unadjusted) >> cseries.FixedFractionalBits) - transparency
+		return int32(0xffff - cseries.Fixed((((color ^ 0xffff) * unadjusted) >> cseries.FixedFractionalBits)) - transparency)
 	}
 	updateElement := func(adjusted cseries.Word, component int32) cseries.Word {
 		return cseries.Word(customCeiling(component, int32(adjusted)))
@@ -454,17 +489,20 @@ func BurnColorTable(original, animated ColorTable, color *RgbColor, transparency
 	updateElement := func(adjusted cseries.Word, component int32) cseries.Word {
 		return cseries.Word(customCeiling(component, int32(adjusted)))
 	}
-	computeComponent := func(unadjusted, color cseries.Word, transparency cseries.FixedOne) int32 {
-		return ((color * unadjusted) >> FIXED_FRACTIONAL_BITS) + transparency
+	computeComponent := func(unadjusted, color cseries.Word, transparency cseries.Fixed) int32 {
+		return int32(cseries.Fixed(((color * unadjusted) >> cseries.FixedFractionalBits)) + transparency)
 	}
 	transparency = cseries.FixedOne - transparency
 	for i := 0; i < len(original); i++ {
-		component := computeComponent(original[i].Red, color.Red, transparency)
-		animated[i].Red = customCeiling(original[i].Red, component)
-		component = computeComponent(original[i].Green, color.Green, transparency)
-		animated[i].Green = customCeiling(original[i].Green, component)
-		component = computeComponent(original[i].Blue, color.Blue, transparency)
-		animated[i].Blue = customCeiling(original[i].Blue, component)
+		r := original[i].Red
+		g := original[i].Green
+		b := original[i].Blue
+		component := computeComponent(r, color.Red, transparency)
+		animated[i].Red = cseries.Word(customCeiling(int32(r), component))
+		component = computeComponent(g, color.Green, transparency)
+		animated[i].Green = cseries.Word(customCeiling(int32(g), component))
+		component = computeComponent(b, color.Blue, transparency)
+		animated[i].Blue = cseries.Word(customCeiling(int32(b), component))
 	}
 
 	//component= ((color->red*unadjusted->red)>>FIXED_FRACTIONAL_BITS) + transparency, adjusted->red= CEILING(component, unadjusted->red);
@@ -479,8 +517,8 @@ func SoftTintColorTable(original, animated ColorTable, color *RgbColor, transpar
 		return cseries.Word(x + (((((y * w) >> (cseries.FixedFractionalBits - AdjustedTransparencyDownshift)) - x) * z) >> (cseries.FixedFractionalBits - AdjustedTransparencyDownshift)))
 	}
 	for i := 0; i < len(original); i++ {
-		intensity := cseries.Word(cseries.Max(original[i].Red, original[i].Green))
-		intensity = cseries.Word(cseries.Max(intensity, original[i].Blue) >> AdjustedTransparencyDownshift)
+		intensity := cseries.Word(cseries.Max(int64(original[i].Red), int64(original[i].Green)))
+		intensity = cseries.Word(cseries.Max(int64(intensity), int64(original[i].Blue)) >> AdjustedTransparencyDownshift)
 
 		animated[i].Red = fn(original[i].Red, color.Red, adjustedTransparency, intensity)
 		animated[i].Green = fn(original[i].Green, color.Green, adjustedTransparency, intensity)

@@ -91,6 +91,28 @@ func Max(x, y int64) int64 {
 
 type Fixed int32
 
+func (n Fixed) Floor(floor Fixed) Fixed {
+	if n < floor {
+		return floor
+	} else {
+		return n
+	}
+}
+func (n Fixed) Ceiling(ceiling Fixed) Fixed {
+	if n > ceiling {
+		return ceiling
+	} else {
+		return n
+	}
+}
+func (n Fixed) Pin(floor, ceiling Fixed) Fixed {
+	if n < floor {
+		return floor
+	} else {
+		return n.Ceiling(ceiling)
+	}
+}
+
 const (
 	FixedFractionalBits       = 16
 	FixedOne            Fixed = Fixed(1 << FixedFractionalBits)
