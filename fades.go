@@ -409,11 +409,11 @@ func DodgeColorTable(original, animated ColorTable, color *RgbColor, transparenc
 		var component int32
 
 		component = computeComponent(original[i].Red, color.Red)
-		animated[i].Red = updateElement(animated[i].Red, component)
+		animated[i].Red = updateElement(original[i].Red, component)
 		component = computeComponent(original[i].Blue, color.Blue)
-		animated[i].Blue = updateElement(animated[i].Blue, component)
+		animated[i].Blue = updateElement(original[i].Blue, component)
 		component = computeComponent(original[i].Green, color.Green)
-		animated[i].Green = updateElement(animated[i].Green, component)
+		animated[i].Green = updateElement(original[i].Green, component)
 	}
 
 	// Using the comma operator instead of ; for assignment...why?
@@ -433,9 +433,17 @@ func BurnColorTable(original, animated ColorTable, color *RgbColor, transparency
 	updateElement := func(adjusted cseries.Word, component int32) cseries.Word {
 		return cseries.Word(customCeiling(component, int32(adjusted)))
 	}
+	computeComponent := func(unadjusted, color cseries.Word, transparency cseries.FixedOne) int32 {
+		return ((color * unadjusted) >> FIXED_FRACTIONAL_BITS) + transparency
+	}
 	transparency = cseries.FixedOne - transparency
 	for i := 0; i < len(original); i++ {
-
+		component := computeComponent(original[i].Red, color.Red, transparency)
+		animated[i].Red = customCeiling(original[i].Red, component)
+		component = computeComponent(original[i].Green, color.Green, transparency)
+		animated[i].Green = customCeiling(original[i].Green, component)
+		component = computeComponent(original[i].Blue, color.Blue, transparency)
+		animated[i].Blue = customCeiling(original[i].Blue, component)
 	}
 
 	//component= ((color->red*unadjusted->red)>>FIXED_FRACTIONAL_BITS) + transparency, adjusted->red= CEILING(component, unadjusted->red);
