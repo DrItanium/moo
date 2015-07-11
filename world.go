@@ -294,7 +294,7 @@ func Arctangent(x, y WorldDistance) Angle {
 			for searchArc := QuarterCircle - 1; searchArc != 0; searchArc-- {
 				newDifference := int32(tangent) - TangentTable[theta]
 				if (lastDifference <= 0 && newDifference >= 0) || (lastDifference >= 0 && newDifference <= 0) {
-					if cseries.Abs(int(lastDifference)) < cseries.Abs(int(newDifference)) {
+					if cseries.Abs(int64(lastDifference)) < cseries.Abs(int64(newDifference)) {
 						return theta - 1
 					} else {
 						return theta
