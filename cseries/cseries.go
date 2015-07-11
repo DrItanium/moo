@@ -11,6 +11,28 @@ const (
 
 type Word uint16
 
+func (n Word) Floor(floor Word) Word {
+	if n < floor {
+		return floor
+	} else {
+		return n
+	}
+}
+func (n Word) Ceiling(ceiling Word) Word {
+	if n > ceiling {
+		return ceiling
+	} else {
+		return n
+	}
+}
+func (n Word) Pin(floor, ceiling Word) Word {
+	if n < floor {
+		return floor
+	} else {
+		return n.Ceiling(ceiling)
+	}
+}
+
 func Signum(x int) int {
 	if x < 0 {
 		return -1

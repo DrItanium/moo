@@ -342,19 +342,59 @@ func RecalculateAndDisplayColorTable(fadeType int16, transparency cseries.Fixed,
 }
 
 func TintColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
-
+	adjustedTransparency := transparency >> AdjustedTransparencyDownshift
+	fn := func(unadjustedValue, colorValue cseries.Word) cseries.Word {
+		return unadjustedValue + (((colorValue - unadjustedValue) * adjustedTransparency) >> (cseries.FixedFractionalBits - AdjustedTransparencyDownshift))
+	}
+	for i := 0; i < len(original); i++ {
+		animated[i].Red = fn(original[i].Red, color.Red)
+		animated[i].Green = fn(original[i].Green, color.Green)
+		animated[i].Blue = fn(original[i].Blue, color.Blue)
+	}
 }
 
 func RandomizeColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
-
+	var mask cseries.Word
+	adjustedTransparency := transparency.Pin(0, 0xffff)
+	// calculate a mask which has all bits including and lower than the high-bit in the transparency set
+	for mask = 0; (adjustedTransparency &^ mask) != 0; mask = (mask << 1) | 1 {
+		// empty loop body
+	}
+	fn := func(value, mask cseries.Word) cseries.Word {
+		return value + (FadesRandom() & mask)
+	}
+	for i := 0; i < len(original); i++ {
+		animated[i].Red = fn(original[i].Red, mask)
+		animated[i].Green = fn(original[i].Green, mask)
+		animated[i].Blue = fn(original[i].Blue, mask)
+	}
 }
 
+// unlike pathways, all colors won't pass through 50% gray at the same time
 func NegateColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
+	transparency = cseries.FixedOne - transparency
 
+	fn := func(ov, cv cseries.Word) cseries.Word {
+		var tmp cseries.Word
+		if ov > 0x8000 {
+			tmp = (ov ^ cv) + transparency
+			return tmp.Ceiling(ov)
+		} else {
+			tmp = (ov ^ cv) - transparency
+			return tmp.Floor(ov)
+		}
+	}
+	for i := 0; i < len(original); i++ {
+		animated[i].Red = fn(original[i].Red, color.Red)
+		animated[i].Green = fn(original[i].Green, color.Green)
+		animated[i].Blue = fn(original[i].Blue, color.Blue)
+	}
 }
 
 func DodgeColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
-
+	//	for i := 0; i < len(original); i++ {
+	//
+	//	}
 }
 
 func BurnColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
