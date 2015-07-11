@@ -176,13 +176,6 @@ var ActualGammaValues = [NumberOfGammaLevels]float32{
 	0.70,
 }
 
-func GetFadeDefinition(index int16) *FadeDefinition {
-	return nil
-}
-func GetFadeEffectDefinition(index int16) *FadeEffectDefinition {
-	return nil
-}
-
 func InitializeFades() {
 	Fade = new(FadeData)
 	Fade.SetActive(false)
