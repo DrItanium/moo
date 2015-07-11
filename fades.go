@@ -392,12 +392,55 @@ func NegateColorTable(original, animated ColorTable, color *RgbColor, transparen
 }
 
 func DodgeColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
-	//	for i := 0; i < len(original); i++ {
-	//
-	//	}
+	customCeiling := func(n, ceiling int32) int32 {
+		if n > ceiling {
+			return ceiling
+		} else {
+			return n
+		}
+	}
+	computeComponent := func(unadjusted, color cseries.Word) int32 {
+		return 0xffff - (((color ^ 0xffff) * unadjusted) >> cseries.FixedFractionalBits) - transparency
+	}
+	updateElement := func(adjusted cseries.Word, component int32) cseries.Word {
+		return cseries.Word(customCeiling(component, int32(adjusted)))
+	}
+	for i := 0; i < len(original); i++ {
+		var component int32
+
+		component = computeComponent(original[i].Red, color.Red)
+		animated[i].Red = updateElement(animated[i].Red, component)
+		component = computeComponent(original[i].Blue, color.Blue)
+		animated[i].Blue = updateElement(animated[i].Blue, component)
+		component = computeComponent(original[i].Green, color.Green)
+		animated[i].Green = updateElement(animated[i].Green, component)
+	}
+
+	// Using the comma operator instead of ; for assignment...why?
+	//component= 0xffff - (((color->red^0xffff)*unadjusted->red)>>FIXED_FRACTIONAL_BITS) - transparency, adjusted->red= CEILING(component, unadjusted->red);
+	//component= 0xffff - (((color->green^0xffff)*unadjusted->green)>>FIXED_FRACTIONAL_BITS) - transparency, adjusted->green= CEILING(component, unadjusted->green);
+	//component= 0xffff - (((color->blue^0xffff)*unadjusted->blue)>>FIXED_FRACTIONAL_BITS) - transparency, adjusted->blue= CEILING(component, unadjusted->blue);
 }
 
 func BurnColorTable(original, animated ColorTable, color *RgbColor, transparency cseries.Fixed) {
+	customCeiling := func(n, ceiling int32) int32 {
+		if n > ceiling {
+			return ceiling
+		} else {
+			return n
+		}
+	}
+	updateElement := func(adjusted cseries.Word, component int32) cseries.Word {
+		return cseries.Word(customCeiling(component, int32(adjusted)))
+	}
+	transparency = cseries.FixedOne - transparency
+	for i := 0; i < len(original); i++ {
+
+	}
+
+	//component= ((color->red*unadjusted->red)>>FIXED_FRACTIONAL_BITS) + transparency, adjusted->red= CEILING(component, unadjusted->red);
+	//component= ((color->green*unadjusted->green)>>FIXED_FRACTIONAL_BITS) + transparency, adjusted->green= CEILING(component, unadjusted->green);
+	//component= ((color->blue*unadjusted->blue)>>FIXED_FRACTIONAL_BITS) + transparency, adjusted->blue= CEILING(component, unadjusted->blue);
 
 }
 
