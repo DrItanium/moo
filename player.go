@@ -2,6 +2,7 @@
 package moo
 
 import (
+	"fmt"
 	"github.com/DrItanium/moo/cseries"
 )
 
@@ -252,14 +253,16 @@ type PlayerData struct {
 
 	NetgameParameters [2]int32
 
-	Unused [256]int16
+	unused [256]int16
 }
 
+/*
 type ActionQueue struct {
 	ReadIndex, WriteIndex int16
 
 	Buffer chan int32
 }
+*/
 
 type PlayerShapeDefinitions struct {
 	Collection int16
@@ -280,14 +283,14 @@ type DamageResponseDefinition struct {
 	Sound, DeathSound, DeathAction int16
 }
 
-var Players []PlayerData
+var Players [MaximumNumberOfPlayers]PlayerData
 
 var LocalPlayerIndex int16
 var CurrentPlayerIndex int16
 var LocalPlayer *PlayerData
 var CurrentPlayer *PlayerData
 
-var ActionQueues *ActionQueue
+var ActionQueues [MaximumNumberOfPlayers]chan int32
 
 var playerShapes = PlayerShapeDefinitions{
 	Collection:     6,
@@ -341,6 +344,11 @@ var DamageResponseDefinitions = []DamageResponseDefinition{
 	DamageResponseDefinition{DamageHummerBolt, cseries.None, FadeFlickerNegative, cseries.None, SndHumanScream, cseries.None},
 }
 
+const (
+	EpilogueLevelNumber        = 256
+	NoTeleportationDestination = 512
+)
+
 func InitializePlayers() {
 
 }
@@ -349,7 +357,11 @@ func ResetPlayerQueues() {
 }
 
 func AllocatePlayerMemory() {
-
+	// in the C version of this function, a contiguous section of memory is allocated for the action_queue's buffer
+	// Each player gets a section of the memory. In golang we can just use channels :D
+	for i := 0; i < MaximumNumberOfPlayers; i++ {
+		ActionQueues[i] = make(chan int32, ActionQueueBufferDiameter)
+	}
 }
 
 func SetLocalPlayerIndex(playerIndex int16) {
@@ -360,8 +372,43 @@ func SetCurrentPlayerIndex(playerIndex int16) {
 
 }
 
-func NewPlayer(team, color, playerIdentifier int16) int16 {
-	return 0
+func NewPlayer(team, color, playerIdentifier int16) (int16, error) {
+	playerIndex := DynamicWorld.PlayerCount
+	if playerIndex >= MaximumNumberOfPlayers {
+		return 0, &cseries.AssertionError{
+			Function: "NewPlayer",
+			Message:  fmt.Sprintf("Attempted to create a new player when the maximum number of players (%d) has been created!", MaximumNumberOfPlayers),
+		}
+	}
+	DynamicWorld.PlayerCount++
+	player := GetPlayerData(playerIndex)
+
+	player.TeleportingDestination = NoTeleportationDestination
+	player.InterfaceFlags = 0 // doesn't matter-> give_player_initial_items will take care of it.
+	player.SuitEnergy = PlayerMaximumSuitEnergy
+	player.SuitOxygen = PlayerMaximumSuitOxygen
+	player.Color = color
+	player.Team = team
+	player.Flags = 0 // redundant but this is a port from the C code, I'll eliminate these sorts of assignments in a second pass
+	player.InvincibilityDuration = 0
+	player.InvisibilityDuration = 0
+	player.InfravisionDuration = 0
+	player.ExtravisionDuration = 0
+	player.Identifier = playerIdentifier
+
+	for loop := 0; loop < NumberOfItems; loop++ {
+		player.Items[loop] = cseries.None
+	}
+	// create the player... */
+	RecreatePlayer(playerIndex)
+	// mark the player's inventory as dirty
+	MarkPlayerInventoryAsDirty(playerIndex, cseries.None)
+	InitializePlayerWeapons(playerIndex)
+
+	// give player his initial items
+	GivePlayerInitialItems(playerIndex)
+	TryAndStripPlayerItems(playerIndex)
+	return playerIndex, nil
 }
 
 func DeletePlayer(playerNumber int16) {
@@ -481,5 +528,13 @@ func GetBinocularVisionOrigins(playerIndex int16, left *WorldPoint3d, leftPolygo
 
 func GetPlayerForwardVelocityScale(PlayerIndex int16) cseries.Fixed {
 	return cseries.FixedOne
+
+}
+
+func SetPlayerShapes(playerIndex int16, animate bool) {
+
+}
+
+func RecreatePlayer(index int16) {
 
 }

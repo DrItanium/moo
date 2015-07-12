@@ -75,3 +75,47 @@ type ObjectLocation struct {
 	Yaw, Pitch Angle
 	Flags      cseries.Word
 }
+
+type DynamicData struct {
+	// ticks since the beginning of the game
+	TickCount int32
+
+	// the real seed is static in WORLD.C; must call set_random_seed()
+	RandomSeed cseries.Word
+
+	// this is stored in the dynamic_data so that it is valid across saves
+	GameInformation GameData
+
+	PlayerCount         int16
+	SpeakingPlayerIndex int16
+
+	unused                                        int16
+	PlatformCount                                 int16
+	EndpointCount                                 int16
+	LineCount                                     int16
+	SideCount                                     int16
+	PolygonCount                                  int16
+	LightsourceCount                              int16
+	MapIndexCount                                 int16
+	AmbientSoundImageCount, RandomSoundImageCount int16
+
+	//statistically unlikely to be valid
+
+	ObjectCount     int16
+	MonsterCount    int16
+	ProjectileCount int16
+	EffectCount     int16
+	LightCount      int16
+
+	DefaultAnnotationCount  int16
+	PersonalAnnotationCount int16
+
+	InitialObjectsCount int16
+
+	GarbageObjectCount int16
+
+	// used by MoveMonsters to decide who gets to generate paths, etc.
+	LastMonsterIndexToGetTime, LastMonsterIndexToBuildPath int16
+}
+
+var DynamicWorld *DynamicData
