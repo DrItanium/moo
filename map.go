@@ -51,9 +51,23 @@ const (
 	DamageShotgunProjectile
 
 	// damage flags
-	AlienDAmage = 0x1
+	AlienDamage = 0x1
+
+	MaximumSavedObjects = 384
+
+	// map object types
+	SavedMonster     = iota // index is monster type
+	SavedObject             // index is scenery type
+	SavedItem               // index is item type
+	SavedPlayer             // index is team bitfield
+	SavedGoal               // index is goal number
+	SavedSoundSource        // index is source type, facing is sound volume
+
+	MapObjectIsInvisible = 0x0001
 
 	MaximumVerticesPerPolygon = 8
+
+	MaximumObjectTypes = 64
 )
 
 type DamageDefinition struct {
@@ -75,7 +89,21 @@ type ObjectLocation struct {
 	Yaw, Pitch Angle
 	Flags      cseries.Word
 }
+type StaticData struct {
+	EnviromentCode int16
 
+	PhysicsModel     int16
+	SongIndex        int16
+	MissionFlags     int16
+	EnvironmentFlags int16
+
+	BallInPlay bool // true if there's a ball in play
+	unused1    bool
+	unused     [3]int16
+
+	LevelName       string
+	EntryPointFlags int32
+}
 type DynamicData struct {
 	// ticks since the beginning of the game
 	TickCount int32
@@ -116,6 +144,27 @@ type DynamicData struct {
 
 	// used by MoveMonsters to decide who gets to generate paths, etc.
 	LastMonsterIndexToGetTime, LastMonsterIndexToBuildPath int16
+
+	// variables used by NewMonster to adjust for different difficulty levels
+	NewMonsterManglerCookie, NewMonsterVanishingCookie int16
+
+	// number of civilians killed by players; periodically decremented
+	CiviliansKilledByPlayers int16
+
+	// Used by the item placement stuff
+	RandomMonstersLeft  [MaximumObjectTypes]int16
+	CurrentMonsterCount [MaximumObjectTypes]int16
+	RandomItemsLeft     [MaximumObjectTypes]int16
+	CurrentItemCount    [MaximumObjectTypes]int16
+
+	CurrentLevelNumber int16 // what level the user is currently exploring
+
+	CurrentCivilianCausalties, CurrentCivilianCount int16
+	TotalCivilianCausalties, TotalCivilianCount     int16
+
+	GameBeacon      WorldPoint2d
+	GamePlayerIndex int16
 }
 
+var StaticWorld *StaticData
 var DynamicWorld *DynamicData
