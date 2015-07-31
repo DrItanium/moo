@@ -17,7 +17,8 @@ const (
 	DualFunctionClass           // normal weapon, one ammunition type, trigger does something different
 	TwofistedPistolClass        // two can be held at once (different triggers), same ammunition
 	MultipurposeClass           // two weapons in one (assault rifle, grenade launcher), two different ammunition types with two separate triggers; secondary ammunition is discrete (i.e. it is never loaded explicitly but appears in the weapon)
-
+)
+const (
 	// weapon flags
 	NoFlags                            = 0x0
 	WeaponIsAutomatic                  = 0x01
@@ -31,7 +32,8 @@ const (
 	WeaponFiresUnderMedia              = 0x100
 	WeaponTriggersShareAmmo            = 0x200
 	WeaponSecondaryHasAngularFlipping  = 0x400
-
+)
+const (
 	WeaponInHandCollection = 1
 	FistIdle               = iota
 	FistPunching
@@ -58,7 +60,8 @@ const (
 	SmgFiring
 	SmgReloading
 	SmgShellCasing
-
+)
+const (
 	// shell casing types
 	ShellCasingAssaultRifle = iota
 	ShellCasingPistol
