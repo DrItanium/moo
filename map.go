@@ -23,7 +23,8 @@ const (
 	MaximumLevelsPerMap    = 128
 
 	LevelNameLength = 64 + 1
-
+)
+const (
 	// damage types
 	DamageExplosion = iota
 	DamageElectricalStaff
@@ -49,12 +50,14 @@ const (
 	DamageOxygenDrain
 	DamageHummerBolt
 	DamageShotgunProjectile
-
+)
+const (
 	// damage flags
 	AlienDamage = 0x1
 
 	MaximumSavedObjects = 384
-
+)
+const (
 	// map object types
 	SavedMonster     = iota // index is monster type
 	SavedObject             // index is scenery type
@@ -62,7 +65,8 @@ const (
 	SavedPlayer             // index is team bitfield
 	SavedGoal               // index is goal number
 	SavedSoundSource        // index is source type, facing is sound volume
-
+)
+const (
 	MapObjectIsInvisible = 0x0001
 
 	MaximumVerticesPerPolygon = 8
@@ -112,7 +116,7 @@ type DynamicData struct {
 	RandomSeed cseries.Word
 
 	// this is stored in the dynamic_data so that it is valid across saves
-	GameInformation GameData
+	//GameInformation GameData
 
 	PlayerCount         int16
 	SpeakingPlayerIndex int16

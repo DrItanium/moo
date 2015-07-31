@@ -8,12 +8,15 @@ const (
 
 	MaximumSoundVolumeBits = 8
 	MaximumSoundVolume     = 1 << MaximumSoundVolumeBits
+)
+const (
 	// sound sources
 	Eightbit22kSource = iota
 	Sixteenbit22kSource
 
 	NumberOfSoundSources
-
+)
+const (
 	//initialization flags
 	StereoFlag           = 0x0001 // play sounds in stereo
 	DynamicTrackingFlag  = 0x0002 // tracks sound sources during idleProc
@@ -32,9 +35,10 @@ const (
 	LowerFrequency  = cseries.FixedOne - cseries.FixedOne/8
 	NormalFrequency = cseries.FixedOne
 	HigherFrequency = cseries.FixedOne + cseries.FixedOne/8
+)
 
-	// ---------- Sound Codes
-
+// ---------- Sound Codes
+const (
 	// Ambient Sound Codes
 	AmbientSndWater = iota
 	AmbientSndSewage
@@ -66,7 +70,8 @@ const (
 	AmbientSndJjaroNoise
 
 	NumberOfAmbientSoundDefinitions
-
+)
+const (
 	// Random Sound Codes
 	RandomSndWaterDrip = iota
 	RandomSndSurfaceExplosion
@@ -75,7 +80,8 @@ const (
 	RandomSndJjaroCreak
 
 	NumberOfRandomSoundDefinitions
-
+)
+const (
 	// Sound Codes
 	SndStartup = iota
 	SndTeleportIn

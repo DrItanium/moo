@@ -8,13 +8,16 @@ import (
 const (
 	CollectionVersion     = 3
 	NumberOfPrivateColors = 3
+)
+const (
 	// collection types
 	UnusedCollection = iota
 	WallCollection
 	ObjectCollection
 	InterfaceCollection
 	SceneryCollection
-
+)
+const (
 	HighLevelShapeNameLength = 32
 	// Low Level Shape Definition Flags
 	XMirroredBit        = 0x8000

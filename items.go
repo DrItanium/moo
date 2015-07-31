@@ -17,7 +17,8 @@ const (
 
 	NumberOfItemTypes
 	NetworkStatistics = NumberOfItemTypes // used in game_window.go
-
+)
+const (
 	// item types
 	ItemKnife = iota
 	ItemMagnum
@@ -60,7 +61,8 @@ const (
 	ItemSmgAmmo
 
 	NumberOfDefinedItems
-
+)
+const (
 	Structure_ItemNameList   = 150
 	Structure_HeaderNameList = 151
 

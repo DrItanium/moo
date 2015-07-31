@@ -3,6 +3,7 @@
 package moo
 
 const (
+	_                         = iota << 1
 	PassOneZoneBorder         = 0x0001
 	PassedZoneBorder          = 0x0002
 	ActivateInvisibleMonsters = 0x0004 // sound or teleport trigger
@@ -11,14 +12,17 @@ const (
 	UseActivationBiases       = 0x0020 // inactive monsters follow their editor instructions (trigger)
 	ActivationCannotBeAvoided = 0x0040 // cannot be suppressed because of recent activation (trigger)
 
+)
+const (
 	// activation biases are only used when the monster is activated by a trigger
 	// activation biases (set in editor)
 	ActivateOnPlayer = iota
 	ActivateOnNearestHostile
 	ActivateOnGoal
 	ActivateRandomly
-
-	MaximumMonstersPerMap = 220
+)
+const MaximumMonstersPerMap = 220
+const (
 	// player monsters are never active
 	// monster types
 	MonsterMarine = iota

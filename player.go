@@ -385,8 +385,8 @@ func NewPlayer(team, color, playerIdentifier int16) (int16, error) {
 
 	player.TeleportingDestination = NoTeleportationDestination
 	player.InterfaceFlags = 0 // doesn't matter-> give_player_initial_items will take care of it.
-	player.SuitEnergy = PlayerMaximumSuitEnergy
-	player.SuitOxygen = PlayerMaximumSuitOxygen
+	//player.SuitEnergy = PlayerMaximumSuitEnergy
+	//player.SuitOxygen = PlayerMaximumSuitOxygen
 	player.Color = color
 	player.Team = team
 	player.Flags = 0 // redundant but this is a port from the C code, I'll eliminate these sorts of assignments in a second pass
@@ -402,12 +402,12 @@ func NewPlayer(team, color, playerIdentifier int16) (int16, error) {
 	// create the player... */
 	RecreatePlayer(playerIndex)
 	// mark the player's inventory as dirty
-	MarkPlayerInventoryAsDirty(playerIndex, cseries.None)
+	//MarkPlayerInventoryAsDirty(playerIndex, cseries.None)
 	InitializePlayerWeapons(playerIndex)
 
 	// give player his initial items
-	GivePlayerInitialItems(playerIndex)
-	TryAndStripPlayerItems(playerIndex)
+	//GivePlayerInitialItems(playerIndex)
+	//TryAndStripPlayerItems(playerIndex)
 	return playerIndex, nil
 }
 

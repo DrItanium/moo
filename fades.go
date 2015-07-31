@@ -10,7 +10,8 @@ import (
 const (
 	NumberOfGammaLevels = 8
 	DefaultGammaLevel   = 2
-
+)
+const (
 	// fade types
 
 	StartCinematicFadeIn = iota /* force all colors to black immediately */
@@ -49,14 +50,16 @@ const (
 	FadeTintGross  /* under sewage */
 
 	NumberOfFadeTypes
-
+)
+const (
 	// Effect types
 	EffectUnderWater = iota
 	EffectUnderLaval
 	EffectUnderSewage
 	EffectUnderGoo
 	NumberOfFadeEffectTypes
-
+)
+const (
 	AdjustedTransparencyDownshift = 8
 
 	MinimumFadeRestartTicks = cseries.MachineTicksPerSecond / 2
