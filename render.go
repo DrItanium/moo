@@ -9,6 +9,8 @@ const (
 	MinimumObjectDistance           int16 = int16(WorldOne / 20)
 	MinimumVerticesPerScreenPolygon int16 = 3
 	MaximumVerticesPerScreenPolygon int16 = 16
+)
+const (
 	// render effects
 	RenderEffectFoldIn = iota
 	RenderEffectFoldOut
@@ -30,7 +32,8 @@ const (
 	EndpointHasClipDataBit               /* this endpoint has a valid clip entry */
 	EndpointHasBeenTransformedBit        /* this endpoint has been transformed into screen-space */
 	NumberOfRenderFlags                  /* should be <=16 */
-
+)
+const (
 	PolygonIsVisible           = 1 << PolygonIsVisibleBit
 	EndpointHasBeenVisited     = 1 << EndpointHasBeenVisitedBit
 	EndpointIsVisible          = 1 << EndpointIsVisibleBit
@@ -51,16 +54,19 @@ const (
 	ClipRightFlag = 0x0002
 	ClipUpFlag    = 0x0003
 	ClipDownFlag  = 0x0004
-
+)
+const (
 	// left and right sides of screen
 	Index_LeftSideOfScreen = iota
 	Index_RightSideOfScreen
 	NumberOfInitialEndPointClips
-
+)
+const (
 	// top and bottom sides of screen
 	Index_TopAndBottomOfScreen = iota
 	NumberOfInitialLineClips
-
+)
+const (
 	MaximumNodes                    = 512
 	MaximumClippingEndpointsPerNode = 4
 	MaximumClippingLinesPerNode     = MaximumVerticesPerPolygon - 2

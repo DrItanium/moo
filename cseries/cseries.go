@@ -172,10 +172,15 @@ func AlertUser(alertType, resourceNumber, errorNumber, identifier int16) {
 
 }
 
-var Debug bool
+var debug bool
 
+func DebugStatus() bool {
+	return debug
+}
 func ToggleDebugStats() bool {
-	return Debug
+	old := debug
+	debug = !debug
+	return old
 }
 
 func InitializeDebugger(forceDebuggerOn bool) {

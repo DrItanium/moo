@@ -11,12 +11,14 @@ const (
 	MaximumNumberOfPlayers = 8
 
 	NumberOfItems = 64
-
+)
+const (
 	// physics models
 	EditorModel = iota
 	EarthGravityModel
 	LowGravityModel
-
+)
+const (
 	// Player actions; irrelevant if the player is dying or something
 
 	PlayerStationary = iota
@@ -25,7 +27,8 @@ const (
 	PlayerSliding
 	PlayerAirborne
 	NumberOfPlayerActions
-
+)
+const (
 	// team colors
 	VioletTeam = iota
 	RedTeam
@@ -36,7 +39,8 @@ const (
 	BlueTeam
 	GreenTeam
 	NumberOfTeamColors
-
+)
+const (
 	// action flags
 	AbsoluteYawBits    = 7
 	MaximumAbsoluteYaw = 1 << AbsoluteYawBits
@@ -46,7 +50,9 @@ const (
 
 	AbsolutePositionBits    = 7
 	MaximumAbsolutePosition = 1 << AbsolutePositionBits
+)
 
+const (
 	// action flag bit offsets
 
 	AbsoluteYawModeBit = iota
@@ -86,7 +92,8 @@ const (
 	SwimBit
 
 	NumberOfActionFlagBits // should be <=32
-
+)
+const (
 	// action flags
 	AbsoluteYawMode  = 1 << AbsoluteYawModeBit
 	TurningLeft      = 1 << TurningLeftBit
