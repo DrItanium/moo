@@ -58,17 +58,6 @@ const (
 	MaximumSavedObjects = 384
 )
 const (
-	// map object types
-	SavedMonster     = iota // index is monster type
-	SavedObject             // index is scenery type
-	SavedItem               // index is item type
-	SavedPlayer             // index is team bitfield
-	SavedGoal               // index is goal number
-	SavedSoundSource        // index is source type, facing is sound volume
-)
-const (
-	MapObjectIsInvisible = 0x0001
-
 	MaximumVerticesPerPolygon = 8
 
 	MaximumObjectTypes = 64
@@ -94,34 +83,30 @@ type ObjectLocation struct {
 	Flags      cseries.Word
 }
 type StaticData struct {
-	EnviromentCode int16
+	EnvironmentCode int16
 
 	PhysicsModel     int16
 	SongIndex        int16
-	MissionFlags     int16
-	EnvironmentFlags int16
+	MissionFlags     MissionFlagsDescription
+	EnvironmentFlags EnvironmentFlagsDescription
 
-	BallInPlay bool // true if there's a ball in play
-	unused1    bool
-	unused     [3]int16
-
+	BallInPlay      bool
 	LevelName       string
 	EntryPointFlags int32
 }
+
 type DynamicData struct {
-	// ticks since the beginning of the game
 	TickCount int32
 
-	// the real seed is static in WORLD.C; must call set_random_seed()
 	RandomSeed cseries.Word
 
-	// this is stored in the dynamic_data so that it is valid across saves
-	//GameInformation GameData
+	// this is stored in the DynamicData so that it is valid across saves
+	GameInformation GameData
 
 	PlayerCount         int16
 	SpeakingPlayerIndex int16
 
-	unused                                        int16
+	// Unused int16
 	PlatformCount                                 int16
 	EndpointCount                                 int16
 	LineCount                                     int16
@@ -131,37 +116,33 @@ type DynamicData struct {
 	MapIndexCount                                 int16
 	AmbientSoundImageCount, RandomSoundImageCount int16
 
-	//statistically unlikely to be valid
-
-	ObjectCount     int16
-	MonsterCount    int16
-	ProjectileCount int16
-	EffectCount     int16
-	LightCount      int16
-
+	// statistically unlikely to be valid
+	ObjectCount             int16
+	MonsterCount            int16
+	ProjectileCount         int16
+	EffectCount             int16
+	LightCount              int16
 	DefaultAnnotationCount  int16
 	PersonalAnnotationCount int16
+	InitialObjectsCount     int16
+	GarbageObjectCount      int16
 
-	InitialObjectsCount int16
-
-	GarbageObjectCount int16
-
-	// used by MoveMonsters to decide who gets to generate paths, etc.
+	/* used by move_monsters() to decide who gets to generate paths, etc. */
 	LastMonsterIndexToGetTime, LastMonsterIndexToBuildPath int16
 
-	// variables used by NewMonster to adjust for different difficulty levels
+	/* variables used by new_monster() to adjust for different difficulty levels */
 	NewMonsterManglerCookie, NewMonsterVanishingCookie int16
 
-	// number of civilians killed by players; periodically decremented
+	/* number of civilians killed by players; periodically decremented */
 	CiviliansKilledByPlayers int16
 
-	// Used by the item placement stuff
+	/* used by the item placement stuff */
 	RandomMonstersLeft  [MaximumObjectTypes]int16
 	CurrentMonsterCount [MaximumObjectTypes]int16
 	RandomItemsLeft     [MaximumObjectTypes]int16
 	CurrentItemCount    [MaximumObjectTypes]int16
 
-	CurrentLevelNumber int16 // what level the user is currently exploring
+	CurrentLevelNumber int16 // what level the user is currently exploring.
 
 	CurrentCivilianCausalties, CurrentCivilianCount int16
 	TotalCivilianCausalties, TotalCivilianCount     int16
@@ -170,8 +151,8 @@ type DynamicData struct {
 	GamePlayerIndex int16
 }
 
-var StaticWorld *StaticData
-var DynamicWorld *DynamicData
+var StaticWorld StaticData
+var DynamicWorld DynamicData
 
 type ObjectData struct {
 	Location WorldPoint3d
@@ -364,8 +345,6 @@ const (
 	DifficultyCount
 )
 
-const MaximumObjectTypes = 64
-
 const (
 	// flags for object_frequency_definition
 	ReappearsInRandomLocations = 0x0001
@@ -408,18 +387,6 @@ const (
 	EnvironmentSinglePlayer = 0x4000 // from arriving in the items.c code.
 )
 
-type StaticData struct {
-	EnvironmentCode int16
-
-	PhysicsModel     int16
-	SongIndex        int16
-	MissionFlags     MissionFlagsDescription
-	EnvironmentFlags EnvironmentFlagsDescription
-
-	BallInPlay      bool
-	LevelName       string
-	EntryPointFlags int32
-}
 type GameOptions int16
 
 const ( /* game options.. */
@@ -476,64 +443,6 @@ type GameData struct {
 	// Parameters [2]int16 // use these later. for now memset to 0
 }
 
-type DynamicData struct {
-	TickCount int32
-
-	RandomSeed cseries.Word
-
-	// this is stored in the DynamicData so that it is valid across saves
-	GameInformation GameData
-
-	PlayerCount         int16
-	SpeakingPlayerIndex int16
-
-	// Unused int16
-	PlatformCount                                 int16
-	EndpointCount                                 int16
-	LineCount                                     int16
-	SideCount                                     int16
-	PolygonCount                                  int16
-	LightsourceCount                              int16
-	MapIndexCount                                 int16
-	AmbientSoundImageCount, RandomSoundImageCount int16
-
-	// statistically unlikely to be valid
-	ObjectCount             int16
-	MonsterCount            int16
-	ProjectileCount         int16
-	EffectCount             int16
-	LightCount              int16
-	DefaultAnnotationCount  int16
-	PersonalAnnotationCount int16
-	InitialObjectsCount     int16
-	GarbageObjectCount      int16
-
-	/* used by move_monsters() to decide who gets to generate paths, etc. */
-	LastMonsterIndexToGetTime, LastMonsterIndexToBuildPath int16
-
-	/* variables used by new_monster() to adjust for different difficulty levels */
-	NewMonsterManglerCookie, NewMonsterVanishingCookie int16
-
-	/* number of civilians killed by players; periodically decremented */
-	CiviliansKilledByPlayers int16
-
-	/* used by the item placement stuff */
-	RandomMonstersLeft  [MaximumObjectTypes]int16
-	CurrentMonsterCount [MaximumObjectTypes]int16
-	RandomItemsLeft     [MaximumObjectTypes]int16
-	CurrentItemCount    [MaximumObjectTypes]int16
-
-	CurrentLevelNumber int16 // what level the user is currently exploring.
-
-	CurrentCivilianCausalties, CurrentCivilianCount int16
-	TotalCivilianCausalties, TotalCivilianCount     int16
-
-	GameBeacon      WorldPoint2d
-	GamePlayerIndex int16
-}
-
-var StaticWorld StaticData
-var DynamicWorld DynamicData
 var Objects []ObjectData
 
 var MapPolygons []PolygonData
@@ -544,7 +453,7 @@ var MapEndpoints []EndpointData
 var AmbientSoundImages []AmbientSoundImageData
 var RandomSoundImages []RandomSoundImageData
 
-var MapIndexes []short
+var MapIndexes []int16
 
 var AutomapLines []byte
 var AutomapPolygons []byte
@@ -566,3 +475,47 @@ type ShapeAndTransferMode struct {
 	TransferMode  int16
 	TransferPhase cseries.Fixed
 }
+type MapObjectTypes int16
+type MapObjectFlags cseries.Word
+
+const (
+	/* map object types */
+	SavedMonster     MapObjectTypes = iota /* .index is monster type */
+	SavedObject                            /* .index is scenery type */
+	SavedItem                              /* .index is item type */
+	SavedPlayer                            /* .index is team bitfield */
+	SavedGoal                              /* .index is goal number */
+	SavedSoundSource                       /* .index is source type, .facing is sound volume */
+)
+const (
+	/* map object flags */
+	MapObjectIsInvisible        MapObjectFlags = 0x0001 /* initially invisible */
+	MapObjectIsPlatformSound    MapObjectFlags = 0x0001
+	MapObjectHangingFromCeiling MapObjectFlags = 0x0002 /* used for calculating absolute .z coordinate */
+	MapObjectIsBlind            MapObjectFlags = 0x0004 /* monster cannot activate by sight */
+	MapObjectIsDeaf             MapObjectFlags = 0x0008 /* monster cannot activate by sound */
+	MapObjectFloats             MapObjectFlags = 0x0010 /* used by sound sources caused by media */
+	MapObjectIsNetworkOnly      MapObjectFlags = 0x0020 /* for items only */
+
+	// top four bits is activation bias for monsters
+)
+
+//#define DECODE_ACTIVATION_BIAS(f) ((f)>>12)
+//#define ENCODE_ACTIVATION_BIAS(b) ((b)<<12)
+type MapObject struct {
+	Type         MapObjctTypes
+	Index        int16
+	Facing       int16
+	PolygonIndex int16
+	Location     WorldPoint3d // z is a delta
+
+	Flags MapObjectFlags
+}
+
+type SavedMapPoint WorldPoint2d
+type SavedLine LineData
+type SavedSide SideData
+type SavedPoly PolygonData
+type SavedAnnotation MapAnnotation
+type SavedObject MapObject
+type SavedMapData StaticData
