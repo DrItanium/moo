@@ -1,6 +1,8 @@
 // physics engine
 package moo
 
+import "github.com/DrItanium/moo/cseries"
+
 type physicsModel int16
 
 const (
