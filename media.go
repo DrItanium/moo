@@ -88,3 +88,16 @@ func getMediaDamage(mediaIndex int16, scale cseries.Fixed) *DamageDefinition {
 func mediaInEnvironment(mediaType, environment int16) bool {
 	return false
 }
+
+type mediaDefinition struct {
+	collection, shape, shapeCount, shapeFrequency int16
+	transferMode                                  int16
+
+	damageFrequency int16 // mask&ticks
+	damage          DamageDefinition
+
+	detonationEffects [NumberOfMediaDetonationTypes]int16
+	sounds            [NUMBER_OF_MEDIA_SOUNDS]int16
+
+	submergedFadeEffect int16
+}
