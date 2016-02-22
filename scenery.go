@@ -40,9 +40,9 @@ func GetSceneryDefinition(sceneryType int16) *SceneryDefinition {
 }
 
 func AnimateScenery() {
-	for i := 0; i < AnimatedSceneryObjectCount; i++ {
-		AnimateObject(AnimatedSceneryObjectIndexes[i])
-	}
+	//for i := 0; i < AnimatedSceneryObjectCount; i++ {
+	//	//AnimateObject(AnimatedSceneryObjectIndexes[i])
+	//}
 }
 
 func RandomizeSceneryShapes() {
@@ -61,6 +61,6 @@ func GetSceneryDimensions(sceneryType int16) (*WorldDistance, *WorldDistance) {
 }
 
 func DamageScenery(objectIndex int16) {
-	object := GetObjectData(objectIndex)
-	definition := GetSceneryDefinition(object.permutation)
+	//object := GetObjectData(objectIndex)
+	//definition := GetSceneryDefinition(object.permutation)
 }

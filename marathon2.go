@@ -23,5 +23,5 @@ func ChangedPolygon(originalPolygonIndex, newPolygonIndex, playerIndex int16) {
 }
 
 func CalcuateLevelCompletionStatus() int16 {
-
+	return 0
 }

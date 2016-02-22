@@ -229,15 +229,15 @@ type SideExclusionZone struct {
 type ControlPanelSideType int16
 
 const (
-	OxygenRefuel ControlPanelSideType = iota
-	ShieldRefuel
-	DoubleShieldRefuel
-	TripleShieldRefuel
-	LightSwitch
-	PlatformSwitch
-	TagSwitch
-	PatternBuffer
-	ComputerTerminal
+	ControlPanelOxygenRefuel ControlPanelSideType = iota
+	ControlPanelShieldRefuel
+	ControlPanelDoubleShieldRefuel
+	ControlPanelTripleShieldRefuel
+	ControlPanelLightSwitch
+	ControlPanelPlatformSwitch
+	ControlPanelTagSwitch
+	ControlPanelPatternBuffer
+	ControlPanelComputerTerminal
 
 	NumberOfControlPanels
 )
@@ -276,10 +276,6 @@ type SideData struct {
 
 	AmbientDelta cseries.Fixed
 }
-
-const (
-	MaximumVerticesPerPolygon = 8
-)
 
 type PolygonType int16
 
