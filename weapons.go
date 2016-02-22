@@ -16,24 +16,29 @@ const (
 	WeaponBall // or something similar
 	WeaponSmg
 	MaximumNumberOfWeapons
-
+)
+const (
 	WeaponDoubleFistedPistols = iota + MaximumNumberOfWeapons // this is a pseudo-weapon
 	WeaponDoubleFistedShotguns
 	PlayerTorsoShapeCount
-
+)
+const (
 	ShapeWeaponIdle = iota
 	ShapeWeaponCharging
 	ShapeWeaponFiring
-
+)
+const (
 	PrimaryWeapon = iota
 	SecondaryWeapon
 	NumberOfTriggers
-
+)
+const (
 	// weapon display positioning modes
 	PositionLow    = iota // position==0 is invisible, position==FIXED_ONE is sticking out from left/bottom
 	PositionCenter        // position==0 is off left/bottom, position==FIXED_ONE is off top/right
 	PositionHigh          // position==0 is invisible, position==FIXED_ONE is sticking out from right/top (mirrored, whether you like it or not)
-
+)
+const (
 	// weapon states
 
 	WeaponIdle            = iota // if weapon_delay is non-zero, the weapon cannot be fired again yet
@@ -54,17 +59,22 @@ const (
 	WeaponSlidingOverFromSecondPosition // Pistol returning to center of screen..
 	WeaponWaitingForOtherIdleToReload   // Pistol awaiting friend's idle..
 	NumberOfWeaponStates
+)
 
+const (
 	TriggerDown         = 0x0001
 	PrimaryWeaponIsUp   = 0x0002
 	SecondaryWeaponIsUp = 0x0004
 	WantsTwofist        = 0x0008
 	FlipState           = 0x0010
+)
 
+const (
 	WeaponType = iota
 	ShellCasingType
 	NumberOfDataTypes
-
+)
+const (
 	// For the flags - [11.unused 1.horizontal 1.vertical 3.unused]
 	FlipShapeHorizontal = 0x08
 	FlipShapeVertical   = 0x10

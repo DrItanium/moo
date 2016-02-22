@@ -3,14 +3,17 @@ package moo
 
 import "github.com/DrItanium/moo/cseries"
 
-const (
-	MaximumPermutationsPerSound = 5
+const MaximumPermutationsPerSound = 5
 
+const (
 	// sound behaviors
 	SoundIsQuiet = iota
 	SoundIsNormal
 	SoundIsLoud
 	NumberOfSoundBehaviorDefinitions
+)
+
+const (
 	// flags
 	SoundCannotBeRestarted       = 0x0001
 	SoundDoesNotSelfAbort        = 0x0002
@@ -19,6 +22,8 @@ const (
 	SoundCannotBeObstructed      = 0x0010 // ignore obstructions
 	SoundCannotBeMediaObstructed = 0x0020 // ignore media obstructions
 	SoundIsAmbient               = 0x0040 // will not be loaded unless Ambient_sound_flag is asserted
+)
+const (
 	// sound chances
 	TenPercent     = 32768 * 9 / 10
 	TwentyPercent  = 32768 * 8 / 10
