@@ -190,7 +190,7 @@ type ObjectData struct {
 	NextObject      int16
 	ParasiticObject int16
 
-	SoundPitch Fixed
+	SoundPitch cseries.Fixed
 }
 
 type EndpointData struct {
@@ -274,7 +274,7 @@ type SideData struct {
 	SecondaryLightsourceIndex   int16
 	TransparentLightsourceIndex int16
 
-	AmbientDelta Fixed
+	AmbientDelta cseries.Fixed
 }
 
 const (
@@ -304,3 +304,12 @@ const (
 	MustBeExploredPolygon
 	AutomaticExitPolygon
 )
+
+type HorizontalSurfaceData struct {
+	Height                         WorldDistance
+	LightSourceIndex               int16
+	Texture                        ShapeDescriptor
+	TransferMode, TransferModeData int16
+
+	Origin WorldPoint2d
+}
