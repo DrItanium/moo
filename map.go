@@ -503,7 +503,7 @@ const (
 //#define DECODE_ACTIVATION_BIAS(f) ((f)>>12)
 //#define ENCODE_ACTIVATION_BIAS(b) ((b)<<12)
 type MapObject struct {
-	Type         MapObjctTypes
+	Type         MapObjectTypes
 	Index        int16
 	Facing       int16
 	PolygonIndex int16
@@ -517,5 +517,86 @@ type SavedLine LineData
 type SavedSide SideData
 type SavedPoly PolygonData
 type SavedAnnotation MapAnnotation
-type SavedObject MapObject
+type SavedObjectType MapObject
 type SavedMapData StaticData
+
+const ( /* entry point types- this is per map level (long). */
+	SinglePlayerEntryPoint           = 0x01
+	MultiplayerCooperativeEntryPoint = 0x02
+	MultiplayerCarnageEntryPoint     = 0x04
+	CaptureTheFlagEntryPoint         = 0x08
+	KingOfHillEntryPoint             = 0x10
+	DefenseEntryPoint                = 0x20
+	RugbyEntryPoint                  = 0x40
+)
+
+type EntryPoint struct {
+	LevelNumber int16
+	LevelName   string
+}
+
+const MaximumPlayerStartNameLength = 32
+
+type PlayerStartData struct {
+	Team       int16
+	Identifier int16
+	Color      int16
+	Name       string
+}
+
+type DirectoryData struct {
+	MissionFlags     int16
+	EnvironmentFlags int16
+	EntryPointFlags  int32
+	LevelName        string
+}
+
+/* ---------- map annotations */
+
+const (
+	MaximumAnnotationsPerMap    = 20
+	MaximumAnnotationTextLength = 64
+)
+
+type MapAnnotation struct {
+	Type int16 /* turns into color, font, size, style, etc... */
+
+	Location     WorldPoint2d /* where to draw this (lower left) */
+	PolygonIndex int16        /* only displayed if this polygon is in the automap */
+
+	Text string
+}
+
+//struct map_annotation *get_next_map_annotation(short *count);
+
+/* ---------- ambient sound images */
+
+const MaximumAmbientSoundImagesPerMap = 64
+
+// non-directional ambient component
+type AmbientSoundImageData struct {
+	Flags      cseries.Word
+	SoundIndex int16
+	Volume     int16
+}
+
+/* ---------- random sound images */
+
+const MaximumRandomSoundImagesPerMap = 64
+
+// sound image flags
+const SoundImageIsNonDirectional = 0x0001 // ignore direction
+
+// possibly directional random sound effects
+type RandomSoundImageData struct {
+	Flags      cseries.Word
+	SoundIndex int16
+
+	Volume, ΔVolume       int16
+	Period, ΔPeriod       int16
+	Direction, ΔDirection Angle
+	Pitch, ΔPitch         cseries.Fixed
+
+	// only used at run-time; initialize to NONE
+	Phase int16
+}
