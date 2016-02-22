@@ -592,10 +592,10 @@ type RandomSoundImageData struct {
 	Flags      cseries.Word
 	SoundIndex int16
 
-	Volume, ΔVolume       int16
-	Period, ΔPeriod       int16
-	Direction, ΔDirection Angle
-	Pitch, ΔPitch         cseries.Fixed
+	Volume, DeltaVolume       int16
+	Period, DeltaPeriod       int16
+	Direction, DeltaDirection Angle
+	Pitch, DeltaPitch         cseries.Fixed
 
 	// only used at run-time; initialize to NONE
 	Phase int16
