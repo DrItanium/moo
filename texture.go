@@ -69,10 +69,7 @@ func (this Pixel32) Blue() byte {
 }
 
 func NewPixel32(r, g, b byte) Pixel32 {
-	rComponent := Pixel32(r) << 16
-	gComponent := Pixel32(g) << 8
-	bComponent := Pixel32(b)
-	return rComponent | gComponent | bComponent
+	return (Pixel32(r) << 16) | (Pixel32(g) << 8) | Pixel32(b)
 }
 
 type RgbColor struct {
@@ -190,3 +187,15 @@ void remap_bitmap(struct bitmap_definition *bitmap,	pixel8 *table);
 
 void erase_bitmap(struct bitmap_definition *bitmap, long pel);
 */
+
+func MapBytes(buffer, table *byte, size int32) {
+
+}
+
+func (this *BitmapDefinition) RemapBitmap(table *Pixel8) {
+
+}
+
+func (this *BitmapDefinition) EraseBitmap(pel int32) {
+
+}
