@@ -69,6 +69,19 @@ const (
 	MaximumArmReach = 3 * WorldOneFourth
 )
 
+type ItemDefinition struct {
+	ItemKind              int16
+	SingularNameId        int16
+	PluralNameId          int16
+	BaseShape             ShapeDescriptor
+	MaximumCountPerPlayer int16
+	InvalidEnvironments   int16
+}
+
+var ItemDefinitions []ItemDefinition
+
+//TODO: fill in item definitions
+
 func NewItem(location *ObjectLocation, itemType int16) (int16, error) {
 	//var objectIndex int16
 	//definition, err0 := GetItemDefinition(itemType)
