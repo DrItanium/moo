@@ -559,3 +559,10 @@ var GameIsNetworked bool // true if this is a network game
 //
 //#define ADD_POLYGON_TO_AUTOMAP(i) (automap_polygons[(i)>>3] |= (byte) 1<<((i)&0x07))
 //#define POLYGON_IS_IN_AUTOMAP(i) ((automap_polygons[(i)>>3]&((byte)1<<((i)&0x07)))?(TRUE):(FALSE))
+
+type ShapeAndTransferMode struct {
+	CollectionConde, LowLevelShapeIndex int16
+
+	TransferMode  int16
+	TransferPhase cseries.Fixed
+}
