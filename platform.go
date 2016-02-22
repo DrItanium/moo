@@ -221,3 +221,16 @@ type platformData struct {
 	parent_platform_index                          int16 /* the platform_index which activated us, if any */
 	tag                                            int16
 }
+
+const (
+	/* return values from monster_can_enter_platform() and monster_can_leave_platform() */
+	_platform_will_never_be_accessable = iota
+	_platform_will_be_accessable
+	_platform_might_be_accessable
+	_platform_is_accessable
+
+	_exit_will_never_be_accessable
+	_exit_will_be_accessable
+	_exit_might_be_accessable
+	_exit_is_accessable
+)
