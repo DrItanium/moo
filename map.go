@@ -600,3 +600,14 @@ type RandomSoundImageData struct {
 	// only used at run-time; initialize to NONE
 	Phase int16
 }
+
+type IntersectingFloodData struct {
+	LineIndexes              []int16
+	EndpointIndexes          []int16
+	PolygonIndexes           []int16
+	OriginalPolygonIndex     int16
+	Center                   WorldPoint2d
+	MinimumSeparationSquared int32
+}
+
+var MapIndexBufferCount int32 = 0
