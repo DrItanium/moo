@@ -40,16 +40,60 @@ type LightingFunctionSpecification struct {
 	Intensity, DeltaIntensity cseries.Fixed
 }
 
-const (
-	// static flags
-	LightIsInitiallyActive = iota
-	LightHasSlavedIntensities
-	LightIsStateless
-	NumberOfStaticLightFlags // <=16
-)
+type StaticLightData struct {
+	Type                 int16
+	IsInitiallyActive    bool
+	HasSlavedIntensities bool
+	IsStateless          bool
+	Phase                int16 // initializer, so lights may start out-of-phase with each other
 
-func init() {
-	if NumberOfStaticLightFlags > 16 {
-		panic("too many static light flag states defined!")
-	}
+	PrimaryActive, SecondaryActive, BecomingActive       LightingFunctionSpecification
+	PrimaryInactive, SecondaryInactive, BecomingInactive LightingFunctionSpecification
+
+	Tag int16
+}
+
+type LightData struct {
+	Flags cseries.Word
+	State int16
+
+	// result of lighting function
+	Intensity cseries.Fixed
+
+	// data recalculated each function changed; passed to lighting_function each update
+
+	Phase, Period                    int16
+	InitialIntensity, FinalIntensity cseries.Fixed
+
+	StaticData StaticLightData
+}
+
+var Lights []LightData
+
+func NewLight(data *StaticLightData) int16 {
+	return 0
+}
+
+func GetDefaultsForLightType(lType int16) *StaticLightData {
+	return nil
+}
+
+func UpdateLights() {
+
+}
+
+func GetLightStatus(lightIndex int16) bool {
+	return false
+}
+
+func SetLightStatus(lightIndex int16, active bool) bool {
+	return false
+}
+
+func SetTaggedLightStatuses(tag int16, newStatus bool) bool {
+	return false
+}
+
+func GetLightIntensity(lightIndex int16) cseries.Fixed {
+	return 0
 }
