@@ -497,9 +497,7 @@ func BurnColorTable(original, animated ColorTable, color *RgbColor, transparency
 	}
 	transparency = cseries.FixedOne - transparency
 	for i := 0; i < len(original); i++ {
-		r := original[i].Red
-		g := original[i].Green
-		b := original[i].Blue
+		r, g, b := original[i].Red, original[i].Green, original[i].Blue
 		component := computeComponent(r, color.Red, transparency)
 		animated[i].Red = updateElement(r, component)
 		component = computeComponent(g, color.Green, transparency)

@@ -14,8 +14,10 @@ const (
 	MaximumCollections         = 1 << DescriptorCollectionBits
 	MaximumShapesPerCollection = 1 << DescriptorShapeBits
 	MaximumClutsPerCollection  = 1 << DescriptorClutBits
-	// collection numbers
+)
 
+const (
+	// collection numbers
 	CollectionInterface      = iota // 0
 	CollectionWeaponsInHand         // 1
 	CollectionJuggernaut            // 2

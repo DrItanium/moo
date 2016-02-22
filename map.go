@@ -172,3 +172,135 @@ type DynamicData struct {
 
 var StaticWorld *StaticData
 var DynamicWorld *DynamicData
+
+type ObjectData struct {
+	Location WorldPoint3d
+	Polygon  int16
+
+	Facing Angle
+
+	Shape ShapeDescriptor
+
+	Sequence, Flags cseries.Word
+
+	TransferMode, TransferPeriod int16
+
+	TransferPhase   int16
+	Permutation     int16
+	NextObject      int16
+	ParasiticObject int16
+
+	SoundPitch Fixed
+}
+
+type EndpointData struct {
+	Solid       bool
+	Transparent bool
+	Elevation   bool
+
+	HighestAdjacentFloorHeight, LowestAdjacentCeilingHeight WorldDistance
+	Vertex                                                  WorldPoint2d
+	Transformed                                             WorldPoint2d
+
+	SupportingPolygonIndex int16
+}
+
+type LineData struct {
+	EndpointIndexes [2]int16
+
+	Solid                                       bool
+	Transparent                                 bool
+	Landscape                                   bool
+	Elevation                                   bool
+	VariableElevation                           bool
+	LineHasTransparentSide                      bool
+	Length                                      WorldDistance
+	HighestAdjacentFloor, LowestAdjacentCeiling WorldDistance
+
+	ClockwisePolygonSideIndex, CounterClockwisePolygonSideIndex int16
+
+	ClockwisePolygonOwner, CounterClockwisePolygonOwner int16
+}
+
+type SideExclusionZone struct {
+	E0, E1, E2, E3 WorldPoint2d
+}
+
+type ControlPanelSideType int16
+
+const (
+	OxygenRefuel ControlPanelSideType = iota
+	ShieldRefuel
+	DoubleShieldRefuel
+	TripleShieldRefuel
+	LightSwitch
+	PlatformSwitch
+	TagSwitch
+	PatternBuffer
+	ComputerTerminal
+
+	NumberOfControlPanels
+)
+
+type SideData struct {
+	Type int16
+
+	ControlPanelStatus        bool
+	ControlPanel              bool
+	RepairSwitch              bool
+	DestructiveSwitch         bool
+	LightedSwitch             bool
+	CanBeDestroyed            bool
+	CanOnlyBeHitByProjectiles bool
+
+	EditorDirty bool // this is probably not relevant
+
+	Primary     SideTextureDefinition
+	Secondary   SideTextureDefinition
+	Transparent SideTextureDefinition
+
+	ExclusionZone SideExclusionZone
+
+	ControlPanelType        ControlPanelSideType
+	ControlPanelPermutation int16
+
+	PrimaryTransferMode     int16
+	SecondaryTransferMode   int16
+	TransparentTransferMode int16
+
+	PolygonIndex, LineIndex int16
+
+	PrimaryLightsourceIndex     int16
+	SecondaryLightsourceIndex   int16
+	TransparentLightsourceIndex int16
+
+	AmbientDelta Fixed
+}
+
+const (
+	MaximumVerticesPerPolygon = 8
+)
+
+type PolygonType int16
+
+const (
+	NormalPolygon PolygonType = iota
+	ItemImpassablePolygon
+	MonsterImpassiblePolygon
+	HillPolygon
+	BasePolygon
+	PlatformPolygon
+	LightOnTriggerPolygon
+	PlatformOnTriggerPolygon
+	LightOffTriggerPolygon
+	PlatformOffTriggerPolygon
+	TeleporterPolygon
+	ZoneBorderPolygon
+	GoalPolygon
+	VisibleMonsterTriggerPolygon
+	InvisibleMonsterTriggerPolygon
+	DualMonsterTriggerPolygon
+	ItemTriggerPolygon
+	MustBeExploredPolygon
+	AutomaticExitPolygon
+)
