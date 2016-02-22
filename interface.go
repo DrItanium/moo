@@ -80,3 +80,21 @@ const (
 	DisplayingNetworkGameDialogs
 	NumberOfGameStates
 )
+
+func GameWindowIsFullScreen() bool {
+	return false
+}
+
+func SetChangeLevelDestination(levelNumber int16) {
+
+}
+
+func NetworkingAvailable() bool {
+	return false
+}
+
+func FreeAndUnlockMemory() {
+
+}
+
+//TODO: insert needed functions as we go through this code rewrite
