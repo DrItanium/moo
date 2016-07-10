@@ -148,13 +148,13 @@ func NewMedia(initializer *MediaData) mediaIndex {
 	var ind mediaIndex
 	var slotPos int16
 	for ind, slotPos = 0, 0; ind < MaximumMediasPerMap; ind, slotPos = ind+1, slotPos+1 {
+		media := ind.GetMediaData()
+		if media.Flags.SlotIsFree() {
+			*media = *initializer
+			media.Flags.MarkSlotAsUsed()
 
-		if Medias[slotPos].Flags.SlotIsFree() {
-			Medias[slotPos] = *initializer
-			Medias[slotPos].Flags.MarkSlotAsUsed()
-
-			Medias[slotPos].Origin.X = 0
-			Medias[slotPos].Origin.Y = 0
+			media.Origin.X = 0
+			media.Origin.Y = 0
 			ind.UpdateOneMedia(true)
 			break
 		}
