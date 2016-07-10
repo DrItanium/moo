@@ -118,9 +118,13 @@ const (
 	BorderInset              = 9
 	FudgeFactor              = 1
 	// terminal-states
+)
+const (
 	ReadingTerminal = iota
 	NoTerminalState
 	TerminalStateCount
+)
+const (
 	// terminal flags
 	TerminalIsDirty = 0x01
 	// terminal keys
@@ -133,6 +137,8 @@ const (
 	//	_terminal_next_state= _left_trigger_state
 	//};
 	strComputerLabels = 135
+)
+const (
 	// computer tags
 	MarathonName = iota
 	ComputerStartingUp
@@ -144,11 +150,14 @@ const (
 	DisconnectingMessage
 	ConnectionTerminatedMessage
 	DateFormat
+)
+const (
 	// Macros
 	MaximumFaceChangesPerTextGrouping = 128
 	// text flags?
 	TextIsEncodedFlag = 0x0001
-
+)
+const (
 	LogonGroup = iota
 	UnfinishedGroup
 	SuccessGroup
@@ -167,6 +176,8 @@ const (
 	StaticGroup // permutation is the duration of static.
 	TagGroup    // permutation is the tag to activate
 	NumberOfGroupTypes
+)
+const (
 	// flags to indicate text styles for paragraphs
 	PlainText     = 0x00
 	BoldText      = 0x01

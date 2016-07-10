@@ -85,6 +85,8 @@ const (
 	TransparentBit = 0x4000
 )
 
+type Column8 []Pixel8
+type Column16 []Pixel16
 type BitmapDefinition struct {
 	Width, Height int16
 	BytesPerRow   int16
@@ -92,7 +94,9 @@ type BitmapDefinition struct {
 	BitDepth      int16
 	// unused field
 	// unused [8]int16
-	RowAddresses [1]*Pixel8
+	// originally a flexible array
+	//RowAddresses [1]*Pixel8
+	RowAddressees []interface{}
 }
 
 // this function is wierd but before I explain it here is the c-code
@@ -142,11 +146,11 @@ var Marathon2 = marathon2_game{}
 type marathon1_game struct{}
 type marathon2_game struct{}
 
-func (marathon1_game) IsMarathon() bool {
+func (marathon1_game) IsMarathon1() bool {
 	return true
 }
 
-func (marathon2_game) IsMarathon() bool {
+func (marathon2_game) IsMarathon1() bool {
 	return false
 }
 
@@ -192,10 +196,48 @@ func MapBytes(buffer, table *byte, size int32) {
 
 }
 
-func (this *BitmapDefinition) RemapBitmap(table *Pixel8) {
-
+func (this *BitmapDefinition) RemapBitmap(table interface{}) error {
+	switch t := table.(type) {
+	default:
+		return fmt.Errorf("Unknown table type: %t", t)
+	}
+	return nil
 }
 
-func (this *BitmapDefinition) EraseBitmap(pel int32) {
+func (this *BitmapDefinition) EraseBitmap(pel int32) error {
+	var rows, columns cseries.Word
 
+	if this.BytesPerRow == cseries.None {
+		return &cseries.AssertionError{
+			Function: "BitmapDefinition.EraseBitmap",
+			Message:  "ERROR: BytesPerRow never set!",
+		}
+	}
+
+	if columnOrderBitSet := this.Flags & ColumnOrderBit; columnOrderBitSet != 0 {
+		row = this.Width
+		column = this.Height
+	} else {
+		row = this.Height
+		column = this.Width
+	}
+
+	for row := 0; row < rows; row++ {
+		pixels := this.RowAddresses[row]
+		switch this.BitDepth {
+		case 8:
+			c8 := pixels.(Column8)
+			for column := 0; column < columns; column++ {
+				c8[column] = Pixel8(pel)
+			}
+		case 16:
+			c16 := pixels.(Column16)
+			for column := 0; column < columns; {
+				c16[column] = Pixel16(pel)
+			}
+		default:
+			return fmt.Errorf("Unknown bits per pixel: %d", this.BitDepth)
+		}
+	}
+	return nil
 }

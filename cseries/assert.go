@@ -1,7 +1,10 @@
 // assertion emulation through the error type
 package cseries
 
-import "fmt"
+import (
+	"fmt"
+	"runtime"
+)
 
 type AssertionError struct {
 	Function string

@@ -17,12 +17,18 @@ const (
 	RenderEffectGoingFisheye
 	RenderEffectLeavingFisheye
 	RenderEffectExplosion
+)
+const (
 	// shading tables
 	ShadingNormal      = iota // to black
 	ShadingInfravision        // false color
+)
+const (
 	// macro constants
 	NormalFieldOfView      = 80
 	ExtravisionFieldOfView = 130
+)
+const (
 	// render flags
 	PolygonIsVisibleBit           = iota /* some part of this polygon is horizontally in the view cone */
 	EndpointHasBeenVisitedBit            /* we've already tried to cast a ray out at this endpoint */
@@ -41,7 +47,8 @@ const (
 	LineHasClipData            = 1 << LineHasClipDataBit
 	EndpointHasClipData        = 1 << EndpointHasClipDataBit
 	EndpointHasBeenTransformed = 1 << EndpointHasBeenTransformedBit
-
+)
+const (
 	RenderFlagsBufferSize = 8 * cseries.Kilo
 	// from render.c
 	PolygonQueueSize                = 256
