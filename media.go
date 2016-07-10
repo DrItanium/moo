@@ -29,75 +29,85 @@ const (
 type MediaSoundType int16
 
 const ( /* media sounds */
-	_media_snd_feet_entering MediaSoundType = iota
-	_media_snd_feet_leaving
-	_media_snd_head_entering
-	_media_snd_head_leaving
-	_media_snd_splashing
-	_media_snd_ambient_over
-	_media_snd_ambient_under
-	_media_snd_platform_entering
-	_media_snd_platform_leaving
-
-	NUMBER_OF_MEDIA_SOUNDS
+	MediaSoundFeetEntering MediaSoundType = iota
+	MediaSoundFeetLeaving
+	MediaSoundHeadEntering
+	MediaSoundHeadLeaving
+	MediaSoundSplashing
+	MediaSoundAmbientOver
+	MediaSoundAmbientUnder
+	MediaSoundPlatformEntering
+	MediaSoundPlatformLeaving
+	NumberOfMediaSounds
 )
 
-type mediaData struct {
-	_type                       MediaType
-	mediaSoundObstructedByFloor bool
+type MediaData struct {
+	Type                        MediaType
+	MediaSoundObstructedByFloor bool
 
 	/* this light is not used as a real light; instead, the intensity of this light is used to
 	determine the height of the media: height= low + (high-low)*intensity ... this sounds
 	gross, but it makes media heights as flexible as light intensities; clearly discontinuous
 	light functions (e.g., strobes) should not be used */
-	lightIndex int16
+	LightIndex int16
 
 	/* this is the maximum external velocity due to current; acceleration is 1/32nd of this */
-	currentDirection      Angle
-	currentMagnitude      WorldDistance
-	high, low             WorldDistance
-	origin                WorldPoint2d
-	height                WorldDistance
-	minimumLightIntensity cseries.Fixed
-	texture               ShapeDescriptor
-	transferMode          int16
+	CurrentDirection      Angle
+	CurrentMagnitude      WorldDistance
+	High, low             WorldDistance
+	Origin                WorldPoint2d
+	Height                WorldDistance
+	MinimumLightIntensity cseries.Fixed
+	Texture               ShapeDescriptor
+	TransferMode          int16
 }
 
-var medias []mediaData
+var Medias []MediaData
 
-func updateMedias() {
-
-}
-
-func getMediaDetonationEffect(mediaIndex int16, dType MediaDetonationEffectType, detonationEffects *int16) {
+func UpdateMedias() {
 
 }
 
-func getMediaSound(mediaIndex, t int16) int16 {
+func GetMediaDetonationEffect(mediaIndex int16, dType MediaDetonationEffectType, detonationEffects *int16) {
+
+}
+
+func GetMediaSound(mediaIndex, t int16) int16 {
 	return 0
 }
 
-func getMediaSubmergedFadeEffect(mediaIndex int16) int16 {
+func GetMediaSubmergedFadeEffect(mediaIndex int16) int16 {
 	return 0
 }
 
-func getMediaDamage(mediaIndex int16, scale cseries.Fixed) *DamageDefinition {
+func GetMediaDamage(mediaIndex int16, scale cseries.Fixed) *DamageDefinition {
 	return nil
 }
 
-func mediaInEnvironment(mediaType, environment int16) bool {
+func MediaInEnvironment(mediaType, environment int16) bool {
 	return false
 }
 
-type mediaDefinition struct {
-	collection, shape, shapeCount, shapeFrequency int16
-	transferMode                                  int16
+func (this *MediaData) UnderMedia(z WorldDistance) bool {
+	return z <= this.Height
+}
 
-	damageFrequency int16 // mask&ticks
-	damage          DamageDefinition
+func GetMediaData(index int16) *MediaData {
+	return nil
+}
 
-	detonationEffects [NumberOfMediaDetonationTypes]int16
-	sounds            [NUMBER_OF_MEDIA_SOUNDS]int16
+type MediaDefinition struct {
+	Collection     int16
+	Shape          int16
+	ShapeCount     int16
+	ShapeFrequency int16
+	TransferMode   int16
 
-	submergedFadeEffect int16
+	DamageFrequency int16 // mask&ticks
+	Damage          DamageDefinition
+
+	DetonationEffects [NumberOfMediaDetonationTypes]int16
+	Sounds            [NumberOfMediaSounds]int16
+
+	SubmergedFadeEffect int16
 }

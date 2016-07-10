@@ -611,3 +611,23 @@ type IntersectingFloodData struct {
 }
 
 var MapIndexBufferCount int32 = 0
+
+func GetObjectData(index int16) *ObjectData {
+	return nil
+}
+
+func GetPolygonData(index int16) *PolygonData {
+	return nil
+}
+
+func GetLineData(index int16) *LineData {
+	return nil
+}
+
+func GetSideData(index int16) *SideData {
+	return nil
+}
+
+func GetEndpointData(index int16) *EndpointData {
+	return nil
+}

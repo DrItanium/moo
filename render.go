@@ -91,7 +91,7 @@ const (
 	MaximumRenderObjects = 72
 )
 
-type Coordinate2d struct {
+type Coordinate struct {
 	X int16
 	Y int16
 }
@@ -143,12 +143,12 @@ type ViewData struct {
 	TerminalModeActive bool
 }
 
-type renderFlags []cseries.Word
+type RenderFlags []cseries.Word
 
-func (this renderFlags) Test(index, flag int16) bool {
+func (this RenderFlags) Test(index, flag int16) bool {
 	return (this[index] & cseries.Word(flag)) == 1
 }
-func (this renderFlags) Set(index, flag int16) {
+func (this RenderFlags) Set(index, flag int16) {
 	this[index] |= cseries.Word(flag)
 }
 
@@ -240,15 +240,8 @@ var HasAmbiguousFlags = false
 var ExceededMaxNodeAliases = false
 
 // in screen.c/h
-func RenderOverheadMap(view *ViewData) {
 
-}
-
-func RenderComputerInterface(view *ViewData) {
-
-}
-
-var renderData struct {
+type renderState struct {
 	Flags                    RenderFlags
 	Nodes                    []NodeData
 	PolygonQueue             []int16
@@ -260,8 +253,10 @@ var renderData struct {
 	LineClipIndexes          []int16
 	ClippingWindows          []ClippingWindowData
 	EndpointXCoordinates     []ClippingWindowData
-	PolygonIndexToSortedNode []*SortedNode
+	PolygonIndexToSortedNode []*SortedNodeData
 }
+
+var renderGlobals = renderState{}
 
 func AllocateRenderMemory() error {
 	if NumberOfRenderFlags > 16 {
@@ -270,26 +265,26 @@ func AllocateRenderMemory() error {
 		return fmt.Errorf("AllocateRenderMemory: MaximumLinesPerMap > RenderFlagsBufferSize")
 	}
 	// add more asserts
-	renderData.Flags = make([]cseries.Word, RenderFlagsBufferSize)
+	renderGlobals.Flags = make([]cseries.Word, RenderFlagsBufferSize)
 	// assert
-	renderData.Nodes = make([]NodeData, MaximumNodes)
-	renderData.PolygonQueue = make([]int16, MaxPolygonQueueSize)
-	renderData.PolygonQueueIndex = 0
-	renderData.SortedNodes = make([]SortedNodeData, MaximumSortedNodes)
-	renderData.RenderObjects = make([]RenderObjectData, MaximumRenderObjects)
-	renderData.EndpointClips = make([]EndpointClipData, MaximumEndpointClips)
-	renderData.LineClips = make([]LineClipData, MaximumLineClips)
-	renderData.LineClipIndexes = make([]int16, MaximumLinesPerMap)
-	renderData.ClippingWindows = make([]ClippingWindowData, MaximumClippingWindows)
-	renderData.EndpointXCoordinates = make([]int16, MaximumEndpointsPerMap)
-	renderData.PolygonIndexToSortedNode = make([]*SortedNode, MaximumPolygonsPerMap)
+	renderGlobals.Nodes = make([]NodeData, MaximumNodes)
+	renderGlobals.PolygonQueue = make([]int16, MaxPolygonQueueSize)
+	renderGlobals.PolygonQueueIndex = 0
+	renderGlobals.SortedNodes = make([]SortedNodeData, MaximumSortedNodes)
+	renderGlobals.RenderObjects = make([]RenderObjectData, MaximumRenderObjects)
+	renderGlobals.EndpointClips = make([]EndpointClipData, MaximumEndpointClips)
+	renderGlobals.LineClips = make([]LineClipData, MaximumLineClips)
+	renderGlobals.LineClipIndexes = make([]int16, MaximumLinesPerMap)
+	renderGlobals.ClippingWindows = make([]ClippingWindowData, MaximumClippingWindows)
+	renderGlobals.EndpointXCoordinates = make([]ClippingWindowData, MaximumEndpointsPerMap)
+	renderGlobals.PolygonIndexToSortedNode = make([]*SortedNodeData, MaximumPolygonsPerMap)
 	return nil
 }
 
 func (view *ViewData) Initialize() {
 	twoPi := 8.0 * math.Atan(1.0)
-	halfCone := view.FieldOfView * (twoPi / 360.0) / 2
-	adjustedHalfCone := math.Asin(view.screenWidth * math.Sin(halfCone) / view.StandardScreenWidth)
+	halfCone := float64(view.FieldOfView) * float64(twoPi/360.0) / 2.0
+	adjustedHalfCone := math.Asin(float64(view.ScreenWidth) * math.Sin(halfCone) / float64(view.StandardScreenWidth))
 	var worldToScreen float64
 
 	view.HalfScreenWidth = view.ScreenWidth / 2
@@ -299,35 +294,34 @@ func (view *ViewData) Initialize() {
 	view.HalfCone = Angle(adjustedHalfCone*(float64(NumberOfAngles))/twoPi + 1.0)
 
 	// calculate world_to_screen; we could calculate this with standard_screen_width/2 and the old half_cone and get the same result
-	worldToScreen = view.HalfScreenWidth / math.Tan(adjustedHalfCone)
+	worldToScreen = float64(view.HalfScreenWidth) / math.Tan(adjustedHalfCone)
 	tmp0 := int16((worldToScreen / float64(view.HorizontalScale)) + 0.5)
 	tmp1 := int16((worldToScreen / float64(view.VerticalScale)) + 0.5)
 	view.WorldToScreen.X = tmp0
 	view.RealWorldToScreen.X = tmp0
 	view.WorldToScreen.Y = tmp1
-	view.RealWorldToScreen = tmp1
+	view.RealWorldToScreen.Y = tmp1
 
 	// cacluate the vertical cone angle; again, overflow instead of underflow when rounding
 	view.HalfVerticalCone = Angle(NumberOfAngles*math.Atan((float64(view.HalfScreenHeight*view.VerticalScale)/worldToScreen))/twoPi + 1.0)
 
 	// calculate left edge vector
-	view.UntransformedLeftEdge.I = view.WorldToScreen.X
-	view.UntransformedLeftEdge.J = -view.HalfScreenWidth
+	view.UntransformedLeftEdge.I = WorldDistance(view.WorldToScreen.X)
+	view.UntransformedLeftEdge.J = WorldDistance(-view.HalfScreenWidth)
 
 	// calculate right edge vector (negative, so it clips in the right direction)
-	view.UntransformedRightEdge.I = -view.WorldToScreen.X
-	view.UntransformedRightEdge.J = -view.HalfScreenWidth
+	view.UntransformedRightEdge.I = WorldDistance(-view.WorldToScreen.X)
+	view.UntransformedRightEdge.J = WorldDistance(-view.HalfScreenWidth)
 
 	// reset any effects
 	view.Effect = cseries.None
 }
-
 func (view *ViewData) RenderView(destination *BitmapDefinition) {
 	view.UpdateViewData()
 
 	// clear the render flags
-	for i := 0; i < len(renderData.Flags); i++ {
-		renderData.Flags[i] = 0
+	for i := 0; i < len(renderGlobals.Flags); i++ {
+		renderGlobals.Flags[i] = 0
 	}
 
 	if view.TerminalModeActive {
@@ -374,11 +368,11 @@ func WrapHigh16(n, max int16) int16 {
 	}
 }
 
-func (renderData) PushPolygonIndex(polygonIndex int16) {
-	if !renderData.Flags.Test(polygonIndex, PolygonIsVisible) {
-		renderData.PolygonQueue[renderData.PolygonQueueIndex] = polygonIndex
-		renderData.PolygonQueueIndex++
-		renderData.Flags.Set(polygonIndex, PolygonIsVisible)
+func (this *renderState) PushPolygonIndex(polygonIndex int16) {
+	if !this.Flags.Test(polygonIndex, PolygonIsVisible) {
+		this.PolygonQueue[this.PolygonQueueIndex] = polygonIndex
+		this.PolygonQueueIndex++
+		this.Flags.Set(polygonIndex, PolygonIsVisible)
 	}
 }
 
@@ -389,30 +383,30 @@ func (view *ViewData) UpdateViewData() {
 		view.UpdateRenderEffect()
 	}
 
-	view.UntransformedLeftEdge.I = view.WorldToScreen.X
-	view.UntransformedRightEdge.I = -view.WorldToScreen.X
+	view.UntransformedLeftEdge.I = WorldDistance(view.WorldToScreen.X)
+	view.UntransformedRightEdge.I = WorldDistance(-view.WorldToScreen.X)
 	// calculate worldToScreen.Y * tan(pitch)
 	view.Dtanpitch = int16(view.WorldToScreen.Y*SineTable[view.Pitch]) / int16(CosineTable[view.Pitch])
 
 	// calculate left cone vector
 	theta := NormalizeAngle(view.Yaw - view.HalfCone)
-	view.RightEdge.I = CosineTable[theta]
-	view.RightEdge.J = SineTable[theta]
+	view.RightEdge.I = WorldDistance(CosineTable[theta])
+	view.RightEdge.J = WorldDistance(SineTable[theta])
 
 	// calculate top cone vector (negative to clip the right direction)
-	view.TopEdge.I = -view.WorldToScreen.Y
-	view.TopEdge.J = -(view.HalfScreenHeight + view.Dtanpitch) // == k
+	view.TopEdge.I = WorldDistance(-view.WorldToScreen.Y)
+	view.TopEdge.J = WorldDistance(-(view.HalfScreenHeight + view.Dtanpitch)) // == k
 
 	// calculate bottom cone vector
-	view.BottomEdge.I = view.WorldToScreen.Y
-	view.BottomEdge.J = view.HalfScreenHeight + view.Dtanpitch // == k
+	view.BottomEdge.I = WorldDistance(view.WorldToScreen.Y)
+	view.BottomEdge.J = WorldDistance(view.HalfScreenHeight + view.Dtanpitch) // == k
 
 	// if we're sitting on one of the endpoints in our origin polygon, move us back slightly (+/- 1) into
 	// that polygon. When we split rays we're assuming that we'll never pass through a given vertex in
 	// different directions (because if we do the tree becomes a graph) but when we start on a vertex
 	// this can happen. This is a destructive modification of the origin
 	polygon := GetPolygonData(view.OriginPolygonIndex)
-	for i := 0; i < polygon.VertexCount; i++ {
+	for i := int16(0); i < polygon.VertexCount; i++ {
 		vertex := GetEndpointData(polygon.EndpointIndexes[i]).Vertex
 		if vertex.X == view.Origin.X && vertex.Y == view.Origin.Y {
 			ccwVertex := GetEndpointData(polygon.EndpointIndexes[WrapLow16(i, polygon.VertexCount-1)]).Vertex
@@ -420,8 +414,8 @@ func (view *ViewData) UpdateViewData() {
 			var insetVector WorldVector2d
 			insetVector.I = (ccwVertex.X - vertex.X) + (cwVertex.X - vertex.X)
 			insetVector.J = (ccwVertex.Y - vertex.Y) + (cwVertex.Y - vertex.Y)
-			view.Origin.X += int16(cseries.Signum(int64(insetVector.I)))
-			view.Origin.Y += int16(cseries.Signum(int16(insetVector.J)))
+			view.Origin.X += WorldDistance(cseries.Signum(int64(insetVector.I)))
+			view.Origin.Y += WorldDistance(cseries.Signum(int64(insetVector.J)))
 			break
 		}
 	}
@@ -435,5 +429,35 @@ func (view *ViewData) UpdateViewData() {
 		view.UnderMediaBoundary = media.UnderMedia(view.Origin.Z)
 		view.UnderMediaIndex = polygon.MediaIndex
 	}
+
+}
+
+func (view *ViewData) RenderOverheadMap() {
+
+}
+
+func (view *ViewData) RenderComputerInterface() {
+
+}
+
+func (view *ViewData) BuildRenderTree() {
+
+}
+
+func (view *ViewData) SortRenderTree() {
+
+}
+func (view *ViewData) BuildRenderObjectList() {
+
+}
+
+func (view *ViewData) RenderTree(destination *BitmapDefinition) {
+}
+
+func (view *ViewData) RenderViewerSpriteLayer(destination *BitmapDefinition) {
+
+}
+
+func (view *ViewData) UpdateRenderEffect() {
 
 }

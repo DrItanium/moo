@@ -3,7 +3,7 @@ package cseries
 
 import (
 	"fmt"
-	"runtime"
+	//	"runtime"
 )
 
 type AssertionError struct {
