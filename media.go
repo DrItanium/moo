@@ -64,52 +64,6 @@ type MediaData struct {
 	TransferMode          int16
 }
 
-var Medias [MaximumMediasPerMap]MediaData
-
-func UpdateMedias() {
-	for mediaIndex, mediaPos := 0, 0; mediaIndex < MaximumMediasPerMap; mediaIndex, mediaPos = mediaIndex+1, mediaPos+1 {
-		media := &Medias[mediaPos]
-		if media.Flags.SlotIsUsed() {
-			UpdateOneMedia(mediaIndex, false)
-
-			media.Origin.X = WorldDistance(media.Origin.X + ((CosineTable[media.CurrentDirection] * media.CurrentMagnitude) >> TrigShift)).FractionalPart()
-			media.Origin.Y = WorldDistance(media.Origin.Y + ((SineTable[media.CurrentDirection] * media.CurrentMagnitude) >> TrigShift)).FractionalPart()
-		}
-	}
-}
-
-func GetMediaDetonationEffect(mediaIndex int16, dType MediaDetonationEffectType, detonationEffects *int16) {
-
-}
-
-func GetMediaSound(mediaIndex, t int16) int16 {
-	return 0
-}
-
-func GetMediaSubmergedFadeEffect(mediaIndex int16) int16 {
-	return 0
-}
-
-func GetMediaDamage(mediaIndex int16, scale cseries.Fixed) *DamageDefinition {
-	return nil
-}
-
-func MediaInEnvironment(mediaType, environment int16) bool {
-	return CollectionInEnvironment(GetMediaDefinition(mediaType).Collection, environment)
-}
-
-func (this *MediaData) UnderMedia(z WorldDistance) bool {
-	return z <= this.Height
-}
-
-func GetMediaData(index int16) *MediaData {
-	return nil
-}
-
-func (this *MediaData) CalculateMediaHeight() int16 {
-	return this.Low + cseries.Fixed((this.Hight-this.Low)*GetLightIntensity(this.LightIndex)).IntegralPart()
-}
-
 type MediaDefinition struct {
 	Collection     int16
 	Shape          int16
@@ -126,10 +80,74 @@ type MediaDefinition struct {
 	SubmergedFadeEffect int16
 }
 
-func NewMedia(initializer *MediaData) int16 {
-	var mediaIndex int16
+var Medias [MaximumMediasPerMap]MediaData
+var MediaDefinitions [NumberOfMediaTypes]MediaDefinition
+
+type mediaIndex int16
+
+func UpdateMedias() {
+	for ind, mediaPos := mediaIndex(0), 0; ind < MaximumMediasPerMap; ind, mediaPos = ind+1, mediaPos+1 {
+		media := &Medias[mediaPos]
+		if media.Flags.SlotIsUsed() {
+			ind.UpdateOneMedia(false)
+
+			media.Origin.X = WorldDistance(media.Origin.X + ((WorldDistance(CosineTable[media.CurrentDirection]) * media.CurrentMagnitude) >> TrigShift)).FractionalPart()
+			media.Origin.Y = WorldDistance(media.Origin.Y + ((WorldDistance(SineTable[media.CurrentDirection]) * media.CurrentMagnitude) >> TrigShift)).FractionalPart()
+		}
+	}
+}
+func (this mediaIndex) GetMediaDetonationEffect(dType MediaDetonationEffectType, detonationEffect *int16) {
+	definition := GetMediaDefinition(this.GetMediaData().Type)
+
+	if dType != MediaDetonationEffectType(cseries.None) {
+		// assert (dType >= 0 && dType < NumberOfMediaDetonationTypes
+		if definition.DetonationEffects[dType] != int16(cseries.None) {
+			*detonationEffect = definition.DetonationEffects[dType]
+		}
+	}
+}
+func (this mediaIndex) GetMediaSound(t int16) int16 {
+	// assert t >= 0 && t < NumberOfMediaSounds
+	return GetMediaDefinition(this.GetMediaData().Type).Sounds[t]
+}
+
+func (this mediaIndex) GetMediaDamage(scale cseries.Fixed) *DamageDefinition {
+	definition := GetMediaDefinition(this.GetMediaData().Type)
+	damage := &definition.Damage
+
+	damage.Scale = scale
+	if damage.Type == cseries.None || ((DynamicWorld.TickCount & int32(definition.DamageFrequency)) != 0) {
+		return nil
+	} else {
+		return damage
+	}
+}
+
+func (this mediaIndex) GetMediaSubmergedFadeEffect() int16 {
+	return GetMediaDefinition(this.GetMediaData().Type).SubmergedFadeEffect
+}
+
+func MediaInEnvironment(mediaType, environment int16) bool {
+	//return CollectionInEnvironment(GetMediaDefinition(mediaType).Collection, environment)
+	return true
+}
+
+func (this *MediaData) UnderMedia(z WorldDistance) bool {
+	return z <= this.Height
+}
+
+func (index mediaIndex) GetMediaData() *MediaData {
+	return &Medias[index]
+}
+
+func (this *MediaData) CalculateMediaHeight() int16 {
+	return this.Low + cseries.Fixed((this.Height-this.Low)*GetLightIntensity(this.LightIndex)).IntegralPart()
+}
+
+func NewMedia(initializer *MediaData) mediaIndex {
+	var ind mediaIndex
 	var slotPos int16
-	for mediaIndex, slotPos = 0, 0; mediaIndex < MaximumMediasPerMap; mediaIndex, slotPos = mediaIndex+1, slotPos+1 {
+	for ind, slotPos = 0, 0; ind < MaximumMediasPerMap; ind, slotPos = ind+1, slotPos+1 {
 
 		if Medias[slotPos].Flags.SlotIsFree() {
 			Medias[slotPos] = *initializer
@@ -137,13 +155,30 @@ func NewMedia(initializer *MediaData) int16 {
 
 			Medias[slotPos].Origin.X = 0
 			Medias[slotPos].Origin.Y = 0
-			UpdateOneMedia(mediaIndex, true)
+			ind.UpdateOneMedia(true)
 			break
 		}
 	}
-	if mediaIndex == MaximumMediasPerMap {
-		mediaIndex = int16(cseries.None)
+	if ind == MaximumMediasPerMap {
+		ind = mediaIndex(cseries.None)
 	}
 	return mediaIndex
+
+}
+
+func GetMediaDefinition(t MediaType) *MediaDefinition {
+	return &MediaDefinitions[t]
+}
+
+func (this mediaIndex) UpdateOneMedia(forceUpdate bool) {
+	media := this.GetMediaData()
+	def := GetMediaDefinition(media.Type)
+
+	// update height
+	media.Height = media.Low + cseries.Fixed((media.High-media.Low)*GetLightIntensity(media.LightIndex)).IntegralPart()
+
+	// update texture
+	media.Texture = BuildDescriptor(def.Collection, def.Shape)
+	media.TransferMode = def.TransferMode
 
 }
