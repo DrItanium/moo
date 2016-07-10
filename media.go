@@ -5,6 +5,7 @@ import "github.com/DrItanium/moo/cseries"
 
 type MediaType int16
 
+const MaximumMediasPerMap = 16
 const (
 	// media types
 	MediaWater MediaType = iota
@@ -42,8 +43,8 @@ const ( /* media sounds */
 )
 
 type MediaData struct {
-	Type                        MediaType
-	MediaSoundObstructedByFloor bool
+	Type  MediaType
+	Flags GenericFlags
 
 	/* this light is not used as a real light; instead, the intensity of this light is used to
 	determine the height of the media: height= low + (high-low)*intensity ... this sounds
@@ -54,7 +55,8 @@ type MediaData struct {
 	/* this is the maximum external velocity due to current; acceleration is 1/32nd of this */
 	CurrentDirection      Angle
 	CurrentMagnitude      WorldDistance
-	High, low             WorldDistance
+	High                  WorldDistance
+	Low                   WorldDistance
 	Origin                WorldPoint2d
 	Height                WorldDistance
 	MinimumLightIntensity cseries.Fixed
@@ -96,6 +98,10 @@ func GetMediaData(index int16) *MediaData {
 	return nil
 }
 
+func (this *MediaData) CalculateMediaHeight() int16 {
+	return this.Low + cseries.Fixed((this.Hight-this.Low)*GetLightIntensity(this.LightIndex)).IntegralPart()
+}
+
 type MediaDefinition struct {
 	Collection     int16
 	Shape          int16
@@ -110,4 +116,26 @@ type MediaDefinition struct {
 	Sounds            [NumberOfMediaSounds]int16
 
 	SubmergedFadeEffect int16
+}
+
+func NewMedia(initializer *MediaData) int16 {
+	var mediaIndex int16
+	var slotPos int16
+	for mediaIndex, slotPos = 0, 0; mediaIndex < MaximumMediasPerMap; mediaIndex, slotPos = mediaIndex+1, slotPos+1 {
+
+		if Medias[slotPos].Flags.SlotIsFree() {
+			Medias[slotPos] = *initializer
+			Medias[slotPos].Flags.MarkSlotAsUsed()
+
+			Medias[slotPos].Origin.X = 0
+			Medias[slotPos].Origin.Y = 0
+			UpdateOneMedia(mediaIndex, true)
+			break
+		}
+	}
+	if mediaIndex == MaximumMediasPerMap {
+		mediaIndex = int16(cseries.None)
+	}
+	return mediaIndex
+
 }
