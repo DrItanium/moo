@@ -78,7 +78,11 @@ func BuildDescriptor(collection, shape int16) ShapeDescriptor {
 }
 
 //#define BUILD_COLLECTION(collection,clut) ((collection)|(word)((clut)<<DESCRIPTOR_COLLECTION_BITS))
-//func BuildCollection(collection, clut) {
-//
-//}
+func BuildCollection(collection, clut int16) cseries.Word {
+	return (cseries.Word(collection) | cseries.Word(clut<<DescriptorCollectionBits))
+}
+
 //#define GET_COLLECTION(collection) ((collection)&(MAXIMUM_COLLECTIONS-1))
+func GetCollection(collection cseries.Word) cseries.Word {
+	return collection & (MaximumCollections - 1)
+}
