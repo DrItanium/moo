@@ -3,6 +3,7 @@ package moo
 import (
 	"fmt"
 	"github.com/DrItanium/moo/cseries"
+	"math"
 )
 
 const (
@@ -51,10 +52,17 @@ const (
 const (
 	RenderFlagsBufferSize = 8 * cseries.Kilo
 	// from render.c
-	PolygonQueueSize                = 256
+	MaxPolygonQueueSize             = 256
 	MaximumVerticiesPerWorldPolygon = MaximumVerticesPerPolygon + 4
 	ExplosionEffectRange            = WorldOne / 12
 	ClipIndexBufferSize             = 4096
+
+	MaximumLineClips       = 256
+	MaximumEndpointClips   = 64
+	MaximumClippingWindows = 256
+)
+
+const (
 
 	// clip data flags
 	ClipLeftFlag  = 0x0001
@@ -83,6 +91,11 @@ const (
 	MaximumRenderObjects = 72
 )
 
+type Coordinate2d struct {
+	X int16
+	Y int16
+}
+
 type Point2d struct {
 	X int16
 	Y int16
@@ -94,10 +107,6 @@ type DefinitionHeader struct {
 	ClipRight int16
 }
 
-type Coordinate struct {
-	X int16
-	Y int16
-}
 type ViewData struct {
 	FieldOfView                    int16 /* width of the view cone, in degrees (!) */
 	StandardScreenWidth            int16 /* this is *not* the width of the projected image (see initialize_view_data() in RENDER.C */
@@ -143,8 +152,6 @@ func (this renderFlags) Set(index, flag int16) {
 	this[index] |= cseries.Word(flag)
 }
 
-var RenderFlags renderFlags
-
 type FlaggedWorldPoint2d struct {
 	WorldPoint2d
 	Flags cseries.Word
@@ -189,13 +196,6 @@ type ClippingWindowData struct {
 	NextWindow               *ClippingWindowData
 }
 
-func AllocateRenderMemory() error {
-	if NumberOfRenderFlags > 16 {
-		return fmt.Errorf("AllocateRenderMemory: too many render flags!")
-	}
-	return nil
-}
-
 type NodeData struct {
 	Flags                 cseries.Word
 	PolygonIndex          int16
@@ -236,17 +236,8 @@ type RenderObjectData struct {
 	Ymedia          int16
 }
 
-func InitializeViewData(view *ViewData) {
-
-}
-
-func RenderView(view *ViewData, destination *BitmapDefinition) {
-
-}
-
-func StartRenderEffect(view *ViewData, effect int16) {
-
-}
+var HasAmbiguousFlags = false
+var ExceededMaxNodeAliases = false
 
 // in screen.c/h
 func RenderOverheadMap(view *ViewData) {
@@ -257,5 +248,192 @@ func RenderComputerInterface(view *ViewData) {
 
 }
 
-var HasAmbiguousFlags = false
-var ExceededMaxNodeAliases = false
+var renderData struct {
+	Flags                    RenderFlags
+	Nodes                    []NodeData
+	PolygonQueue             []int16
+	PolygonQueueIndex        int16
+	SortedNodes              []SortedNodeData
+	RenderObjects            []RenderObjectData
+	EndpointClips            []EndpointClipData
+	LineClips                []LineClipData
+	LineClipIndexes          []int16
+	ClippingWindows          []ClippingWindowData
+	EndpointXCoordinates     []ClippingWindowData
+	PolygonIndexToSortedNode []*SortedNode
+}
+
+func AllocateRenderMemory() error {
+	if NumberOfRenderFlags > 16 {
+		return fmt.Errorf("AllocateRenderMemory: too many render flags!")
+	} else if MaximumLinesPerMap > RenderFlagsBufferSize {
+		return fmt.Errorf("AllocateRenderMemory: MaximumLinesPerMap > RenderFlagsBufferSize")
+	}
+	// add more asserts
+	renderData.Flags = make([]cseries.Word, RenderFlagsBufferSize)
+	// assert
+	renderData.Nodes = make([]NodeData, MaximumNodes)
+	renderData.PolygonQueue = make([]int16, MaxPolygonQueueSize)
+	renderData.PolygonQueueIndex = 0
+	renderData.SortedNodes = make([]SortedNodeData, MaximumSortedNodes)
+	renderData.RenderObjects = make([]RenderObjectData, MaximumRenderObjects)
+	renderData.EndpointClips = make([]EndpointClipData, MaximumEndpointClips)
+	renderData.LineClips = make([]LineClipData, MaximumLineClips)
+	renderData.LineClipIndexes = make([]int16, MaximumLinesPerMap)
+	renderData.ClippingWindows = make([]ClippingWindowData, MaximumClippingWindows)
+	renderData.EndpointXCoordinates = make([]int16, MaximumEndpointsPerMap)
+	renderData.PolygonIndexToSortedNode = make([]*SortedNode, MaximumPolygonsPerMap)
+	return nil
+}
+
+func (view *ViewData) Initialize() {
+	twoPi := 8.0 * math.Atan(1.0)
+	halfCone := view.FieldOfView * (twoPi / 360.0) / 2
+	adjustedHalfCone := math.Asin(view.screenWidth * math.Sin(halfCone) / view.StandardScreenWidth)
+	var worldToScreen float64
+
+	view.HalfScreenWidth = view.ScreenWidth / 2
+	view.HalfScreenHeight = view.ScreenHeight / 2
+
+	// if there's a round-off error in half_cone, we want to make the cone too big (so when we clip lines to the edge of the screen they're actually off the screen, thus +1.0)
+	view.HalfCone = Angle(adjustedHalfCone*(float64(NumberOfAngles))/twoPi + 1.0)
+
+	// calculate world_to_screen; we could calculate this with standard_screen_width/2 and the old half_cone and get the same result
+	worldToScreen = view.HalfScreenWidth / math.Tan(adjustedHalfCone)
+	tmp0 := int16((worldToScreen / float64(view.HorizontalScale)) + 0.5)
+	tmp1 := int16((worldToScreen / float64(view.VerticalScale)) + 0.5)
+	view.WorldToScreen.X = tmp0
+	view.RealWorldToScreen.X = tmp0
+	view.WorldToScreen.Y = tmp1
+	view.RealWorldToScreen = tmp1
+
+	// cacluate the vertical cone angle; again, overflow instead of underflow when rounding
+	view.HalfVerticalCone = Angle(NumberOfAngles*math.Atan((float64(view.HalfScreenHeight*view.VerticalScale)/worldToScreen))/twoPi + 1.0)
+
+	// calculate left edge vector
+	view.UntransformedLeftEdge.I = view.WorldToScreen.X
+	view.UntransformedLeftEdge.J = -view.HalfScreenWidth
+
+	// calculate right edge vector (negative, so it clips in the right direction)
+	view.UntransformedRightEdge.I = -view.WorldToScreen.X
+	view.UntransformedRightEdge.J = -view.HalfScreenWidth
+
+	// reset any effects
+	view.Effect = cseries.None
+}
+
+func (view *ViewData) RenderView(destination *BitmapDefinition) {
+	view.UpdateViewData()
+
+	// clear the render flags
+	for i := 0; i < len(renderData.Flags); i++ {
+		renderData.Flags[i] = 0
+	}
+
+	if view.TerminalModeActive {
+		// render the computer interface
+		view.RenderComputerInterface()
+	} else {
+		// build the render tree, regardless of map node, so the automap updates while active
+		view.BuildRenderTree()
+		if view.OverheadMapActive {
+			view.RenderOverheadMap()
+		} else {
+			// do something complicated and difficult to explain
+			// sor the render tree (so we have a depth-ordering of polygons) and accumulate clipping information for each polygon
+			view.SortRenderTree()
+
+			// build the render object list by looking at the sorted render tree
+			view.BuildRenderObjectList()
+
+			// render the object list, back to front, doing clipping on each surface before passing it to the texture-mapping code
+			view.RenderTree(destination)
+
+			// render the player's weapons, etc..
+			view.RenderViewerSpriteLayer(destination)
+		}
+	}
+}
+
+func (view *ViewData) StartRenderEffect(effect int16) {
+	view.Effect = effect
+	view.EffectPhase = cseries.None
+}
+func WrapLow16(n, max int16) int16 {
+	if n != 0 {
+		return n - 1
+	} else {
+		return max
+	}
+}
+func WrapHigh16(n, max int16) int16 {
+	if n == max {
+		return 0
+	} else {
+		return n + 1
+	}
+}
+
+func (renderData) PushPolygonIndex(polygonIndex int16) {
+	if !renderData.Flags.Test(polygonIndex, PolygonIsVisible) {
+		renderData.PolygonQueue[renderData.PolygonQueueIndex] = polygonIndex
+		renderData.PolygonQueueIndex++
+		renderData.Flags.Set(polygonIndex, PolygonIsVisible)
+	}
+}
+
+func (view *ViewData) UpdateViewData() {
+	if view.Effect == cseries.None {
+		view.WorldToScreen = view.RealWorldToScreen
+	} else {
+		view.UpdateRenderEffect()
+	}
+
+	view.UntransformedLeftEdge.I = view.WorldToScreen.X
+	view.UntransformedRightEdge.I = -view.WorldToScreen.X
+	// calculate worldToScreen.Y * tan(pitch)
+	view.Dtanpitch = int16(view.WorldToScreen.Y*SineTable[view.Pitch]) / int16(CosineTable[view.Pitch])
+
+	// calculate left cone vector
+	theta := NormalizeAngle(view.Yaw - view.HalfCone)
+	view.RightEdge.I = CosineTable[theta]
+	view.RightEdge.J = SineTable[theta]
+
+	// calculate top cone vector (negative to clip the right direction)
+	view.TopEdge.I = -view.WorldToScreen.Y
+	view.TopEdge.J = -(view.HalfScreenHeight + view.Dtanpitch) // == k
+
+	// calculate bottom cone vector
+	view.BottomEdge.I = view.WorldToScreen.Y
+	view.BottomEdge.J = view.HalfScreenHeight + view.Dtanpitch // == k
+
+	// if we're sitting on one of the endpoints in our origin polygon, move us back slightly (+/- 1) into
+	// that polygon. When we split rays we're assuming that we'll never pass through a given vertex in
+	// different directions (because if we do the tree becomes a graph) but when we start on a vertex
+	// this can happen. This is a destructive modification of the origin
+	polygon := GetPolygonData(view.OriginPolygonIndex)
+	for i := 0; i < polygon.VertexCount; i++ {
+		vertex := GetEndpointData(polygon.EndpointIndexes[i]).Vertex
+		if vertex.X == view.Origin.X && vertex.Y == view.Origin.Y {
+			ccwVertex := GetEndpointData(polygon.EndpointIndexes[WrapLow16(i, polygon.VertexCount-1)]).Vertex
+			cwVertex := GetEndpointData(polygon.EndpointIndexes[WrapHigh16(i, polygon.VertexCount-1)]).Vertex
+			var insetVector WorldVector2d
+			insetVector.I = (ccwVertex.X - vertex.X) + (cwVertex.X - vertex.X)
+			insetVector.J = (ccwVertex.Y - vertex.Y) + (cwVertex.Y - vertex.Y)
+			view.Origin.X += int16(cseries.Signum(int64(insetVector.I)))
+			view.Origin.Y += int16(cseries.Signum(int16(insetVector.J)))
+			break
+		}
+	}
+
+	// determine whether we are under or over the media boundary of our polygon; we will see all
+	// other media boundaries from this orientation (above or below) or fail to draw them.
+	if polygon.MediaIndex == cseries.None {
+		view.UnderMediaBoundary = false
+	} else {
+		media := GetMediaData(polygon.MediaIndex)
+		view.UnderMediaBoundary = media.UnderMedia(view.Origin.Z)
+		view.UnderMediaIndex = polygon.MediaIndex
+	}
+
+}
