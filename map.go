@@ -326,7 +326,7 @@ type PolygonData struct {
 
 	FloorOrigin, CeilingOrigin WorldPoint2d
 
-	MediaIndex            int16
+	MediaIndex            mediaIndex
 	MediaLightsourceIndex int16
 
 	SoundSourceIndexes int16

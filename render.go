@@ -138,7 +138,7 @@ type ViewData struct {
 	OverheadMapScale  int16
 
 	UnderMediaBoundary bool
-	UnderMediaIndex    int16
+	UnderMediaIndex    mediaIndex
 
 	TerminalModeActive bool
 }
@@ -425,7 +425,7 @@ func (view *ViewData) UpdateViewData() {
 	if polygon.MediaIndex == cseries.None {
 		view.UnderMediaBoundary = false
 	} else {
-		media := GetMediaData(polygon.MediaIndex)
+		media := polygon.MediaIndex.GetMediaData()
 		view.UnderMediaBoundary = media.UnderMedia(view.Origin.Z)
 		view.UnderMediaIndex = polygon.MediaIndex
 	}

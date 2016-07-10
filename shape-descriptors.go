@@ -73,6 +73,9 @@ func (this ShapeDescriptor) Clut() cseries.Word {
 //func BuildDescriptor(collection int16, shape byte) ShapeDescriptor {
 //	return ShapeDescriptor((ShapeDescriptor(collection) << DescriptorShapeBits) | ShapeDescriptor(shape))
 //}
+func BuildDescriptor(collection, shape int16) ShapeDescriptor {
+	return ShapeDescriptor((ShapeDescriptor(collection) << DescriptorShapeBits) | ShapeDescriptor(shape))
+}
 
 //#define BUILD_COLLECTION(collection,clut) ((collection)|(word)((clut)<<DESCRIPTOR_COLLECTION_BITS))
 //func BuildCollection(collection, clut) {

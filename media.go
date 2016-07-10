@@ -141,7 +141,7 @@ func (index mediaIndex) GetMediaData() *MediaData {
 }
 
 func (this *MediaData) CalculateMediaHeight() int16 {
-	return this.Low + cseries.Fixed((this.Height-this.Low)*GetLightIntensity(this.LightIndex)).IntegralPart()
+	return int16(this.Low) + cseries.Fixed(cseries.Fixed(this.Height-this.Low)*GetLightIntensity(this.LightIndex)).IntegralPart()
 }
 
 func NewMedia(initializer *MediaData) mediaIndex {
@@ -162,7 +162,7 @@ func NewMedia(initializer *MediaData) mediaIndex {
 	if ind == MaximumMediasPerMap {
 		ind = mediaIndex(cseries.None)
 	}
-	return mediaIndex
+	return ind
 
 }
 
@@ -175,7 +175,7 @@ func (this mediaIndex) UpdateOneMedia(forceUpdate bool) {
 	def := GetMediaDefinition(media.Type)
 
 	// update height
-	media.Height = media.Low + cseries.Fixed((media.High-media.Low)*GetLightIntensity(media.LightIndex)).IntegralPart()
+	media.Height = media.Low + WorldDistance(cseries.Fixed(cseries.Fixed(media.High-media.Low)*GetLightIntensity(media.LightIndex)).IntegralPart())
 
 	// update texture
 	media.Texture = BuildDescriptor(def.Collection, def.Shape)
