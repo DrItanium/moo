@@ -1,17 +1,13 @@
 // common flags class
 package moo
 
-import (
-	"github.com/DrItanium/moo/cseries"
-)
-
-type GenericFlags int16
+type GenericFlags int32
 
 func (this *GenericFlags) MarkSlotAsFree() {
-	*flags &= ^0x8000
+	*this &= GenericFlags(^0x8000)
 }
 func (this *GenericFlags) MarkSlotAsUsed() {
-	*flags |= 0x8000
+	*this |= GenericFlags(0x8000)
 }
 
 func (this GenericFlags) SlotIsUsed() bool {

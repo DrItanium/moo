@@ -64,10 +64,18 @@ type MediaData struct {
 	TransferMode          int16
 }
 
-var Medias []MediaData
+var Medias [MaximumMediasPerMap]MediaData
 
 func UpdateMedias() {
+	for mediaIndex, mediaPos := 0, 0; mediaIndex < MaximumMediasPerMap; mediaIndex, mediaPos = mediaIndex+1, mediaPos+1 {
+		media := &Medias[mediaPos]
+		if media.Flags.SlotIsUsed() {
+			UpdateOneMedia(mediaIndex, false)
 
+			media.Origin.X = WorldDistance(media.Origin.X + ((CosineTable[media.CurrentDirection] * media.CurrentMagnitude) >> TrigShift)).FractionalPart()
+			media.Origin.Y = WorldDistance(media.Origin.Y + ((SineTable[media.CurrentDirection] * media.CurrentMagnitude) >> TrigShift)).FractionalPart()
+		}
+	}
 }
 
 func GetMediaDetonationEffect(mediaIndex int16, dType MediaDetonationEffectType, detonationEffects *int16) {
@@ -87,7 +95,7 @@ func GetMediaDamage(mediaIndex int16, scale cseries.Fixed) *DamageDefinition {
 }
 
 func MediaInEnvironment(mediaType, environment int16) bool {
-	return false
+	return CollectionInEnvironment(GetMediaDefinition(mediaType).Collection, environment)
 }
 
 func (this *MediaData) UnderMedia(z WorldDistance) bool {
