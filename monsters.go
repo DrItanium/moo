@@ -3,7 +3,6 @@
 package moo
 
 const (
-	_                         = iota << 1
 	PassOneZoneBorder         = 0x0001
 	PassedZoneBorder          = 0x0002
 	ActivateInvisibleMonsters = 0x0004 // sound or teleport trigger
@@ -13,19 +12,25 @@ const (
 	ActivationCannotBeAvoided = 0x0040 // cannot be suppressed because of recent activation (trigger)
 
 )
+
+type ActivationBias int16
+
 const (
 	// activation biases are only used when the monster is activated by a trigger
 	// activation biases (set in editor)
-	ActivateOnPlayer = iota
+	ActivateOnPlayer ActivationBias = iota
 	ActivateOnNearestHostile
 	ActivateOnGoal
 	ActivateRandomly
 )
 const MaximumMonstersPerMap = 220
+
+type MonsterType int16
+
 const (
 	// player monsters are never active
 	// monster types
-	MonsterMarine = iota
+	MonsterMarine MonsterType = iota
 	MonsterTickEnergy
 	MonsterTickOxygen
 	MonsterTickKamakazi
@@ -73,8 +78,13 @@ const (
 	VacuumCivilianSecurity
 	VacuumCivilianAssimilated
 	NumberOfMonsterTypes
+)
+
+type MonsterAction int16
+
+const (
 	// monster actions
-	MonsterIsStationary = iota
+	MonsterIsStationary MonsterAction = iota
 	MonsterIsWaitingToAttackAgain
 	MonsterIsMoving
 	MonsterIsAttackingClose // melee
@@ -87,20 +97,29 @@ const (
 	MonsterIsTeleportingIn
 	MonsterIsTeleportingOut
 	NumberOfMonsterActions
+)
+
+type MonsterMode int16
+
+const (
 
 	// monster modes
-	MonsterLocked = iota
+	MonsterLocked MonsterMode = iota
 	MonsterLosingLock
 	MonsterLostLock
 	MonsterUnlocked
 	MonsterRunning
 	NumberOfMonsterModes
+)
 
+type MonsterFlags int16
+
+const (
 	// monster flags
-	MonsterWasPromoted                 = 0x1
-	MonsterWasDemoted                  = 0x2
-	MonsterHasNeverBeenActivated       = 0x4
-	MonsterIsBlind                     = 0x8
-	MonsterIsDeaf                      = 0x10
-	MonsterTeleportsOutWhenDeactivated = 0x20
+	MonsterWasPromoted                 MonsterFlags = 0x1
+	MonsterWasDemoted                               = 0x2
+	MonsterHasNeverBeenActivated                    = 0x4
+	MonsterIsBlind                                  = 0x8
+	MonsterIsDeaf                                   = 0x10
+	MonsterTeleportsOutWhenDeactivated              = 0x20
 )
