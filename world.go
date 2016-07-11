@@ -153,8 +153,7 @@ func (this *WorldPoint2d) Transform(origin *WorldPoint2d, theta Angle) error {
 }
 
 type WorldPoint3d struct {
-	X WorldDistance
-	Y WorldDistance
+	WorldPoint2d
 	Z WorldDistance
 }
 

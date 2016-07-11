@@ -440,10 +440,6 @@ func (view *ViewData) RenderComputerInterface() {
 
 }
 
-func (view *ViewData) BuildRenderTree() {
-
-}
-
 func (view *ViewData) SortRenderTree() {
 
 }
@@ -457,7 +453,133 @@ func (view *ViewData) RenderTree(destination *BitmapDefinition) {
 func (view *ViewData) RenderViewerSpriteLayer(destination *BitmapDefinition) {
 
 }
+func (view *ViewData) UpdateRenderEffect() error {
+	var phase int16
+	effect := view.Effect
+	if view.EffectPhase == cseries.None {
+		phase = 0
+	} else {
+		phase = view.EffectPhase + view.TicksElapsed
+	}
+	var period int16
 
-func (view *ViewData) UpdateRenderEffect() {
+	switch effect {
+	case RenderEffectFoldIn:
+		fallthrough
+	case RenderEffectFoldOut:
+		period = TicksPerSecond / 2
+	case RenderEffectGoingFisheye:
+		fallthrough
+	case RenderEffectLeavingFisheye:
+		period = TicksPerSecond
+	case RenderEffectExplosion:
+		period = TicksPerSecond
+	default:
+		return fmt.Errorf("UpdateRenderEffect: unknown render effect!")
+	}
 
+	if phase > period {
+		view.Effect = cseries.None
+	} else {
+		switch effect {
+		case RenderEffectExplosion:
+			view.ShakeViewOrigin(ExplsionEffectRange - ((ExplosionEffectRange/2)*phase)/period)
+		case RenderEffectFoldIn:
+			phase = period - phase
+			fallthrough
+		case RenderEffectFoldOut:
+			// calculate world to screen based on phase
+			view.WorldToScreen.X = view.RealWorldToScreen.X + (4*view.RealWorldToScreen.X*phase)/period
+			view.WorldToScreen.Y = view.RealWorldToScreen.Y - (view.RealWorldToScreen.Y*phase)/(period+period/4)
+		case RenderEffectLeavingFisheye:
+			phase = period - phase
+			fallthrough
+		case RenderEffectGoingFisheye:
+			// calculate field of view based on phase
+			view.FieldOfView = NormalFieldOfView + ((ExtravisionFieldOfView-NormalFieldOfView)*phase)/period
+			view.InitializeViewData()
+			view.Effect = effect
+		}
+	}
+
+	return nil
+}
+
+// render tree building
+
+type RenderBias int16
+
+const (
+	NoBias               RenderBias = iota // will split at the given endpoint or travel clockwise otherwise
+	ClockwiseBias                          // cross the line clockwise from this endpoint
+	CounterClockwiseBias                   // cross the line counterclockwise from this endpoint
+)
+
+func (view *ViewData) BuildRenderTree() {
+
+	// initialize the queue where we remember polygons we need to fire at
+	view.InitializePolygonQueue()
+
+	// initialize our node list to contain the root, etc
+	view.InitializeRenderTree()
+
+	// reset clipping buffers
+	view.InitializeRenderTree()
+
+	view.CastRenderRay(&view.LeftEdge, cseries.None, renderState.Nodes, CounterClockwiseBias)
+	view.CastRenderRay(&view.RightEdge, cseries.None, renderState.Nodes, ClockwiseBias)
+	for renderState.PolygonQueueIndex != 0 {
+		renderState.PolygonQueueIndex--
+		polygonIndex := renderState.PolygonQueue[renderState.PolygonQueueIndex]
+		polygon := GetPolygonData(polygonIndex)
+
+		// assert ! polygon.IsDetached()
+
+		for vertexIndex := int16(0); vertexIndex < polygon.VertexCount; vertexIndex++ {
+			endpointIndex := polygon.EndpointIndexes[vertexIndex]
+			endpoint := GetEndpointData(endpointIndex)
+
+			if !renderState.Flags.Test(endpointIndex, EndpointHasBeenVisited) {
+				var vector WorldVector2d
+
+				// transform all visited endpoints
+				endpoint.Transformed = endpoint.Vertex
+				(&endpoint.Transformed).Transform(&view.Origin.WorldPoint2d, view.Yaw)
+				vector.I = endpoint.Vertex.X - view.Origin.X
+				vector.J = endpoint.Vertex.Y - view.Origin.Y
+
+				if endpoint.Transformed.X > 0 {
+					x := int32(view.HalfScreenWidth + (endpoint.Transformed.y*view.WorldToScreen.X)/endpoint.Transformed.X)
+
+					renderState.EndpointXCoordinates[endpoint_index] = cseries.Pin(x, cseries.ShortMin, cseries.ShortMax)
+					renderState.Flags.Set(endpoint_index, EndpointHasBeenTransformed)
+				}
+				// do two cross products to determine whether this endpoint is in our view cone or not (we don't have to cast at points outside the cone)
+				if ((view.RightEdge.I*vector.J - view.RightEdge.J*vector.I) <= 0) && ((view.LeftEdge.I*vector.J - view.LeftEdge.J*vector.I) >= 0) {
+					var v int16
+					if endpoint.Transparent {
+						v = cseries.None
+					} else {
+						v = endpointIndex
+					}
+					view.CastRenderRay(&vector, endpoint.Transparent, v, renderState.Nodes, NoBias)
+				}
+				renderState.Flags.Set(endpointIndex, EndpointHasBeenVisited)
+			}
+		}
+	}
+}
+
+// CastRenderRay flags
+const (
+	SplitRenderRay = 0x8000
+)
+
+func (view *ViewData) CastRenderRay(vector *WorldVector2d, endpointIndex int16, parent *NodeData, bias RenderBias) {
+	polygonIndex := parent.PolygonIndex
+	for polygonIndex != cseries.None {
+		clippingEndpointIndex := endpointIndex
+		var clippingLineIndex int16
+		clipFlags := NextPolygonAlongLine(&polygonIndex, &view.Origin.WorldPoint2d, vector, &clippingEndpointIndex, &clippingLineIndex, bias)
+	}
 }
