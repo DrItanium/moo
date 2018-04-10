@@ -9,22 +9,22 @@
 1 constant sizeof(char)
 2 constant sizeof(int16)
 4 constant sizeof(int32)
+: (int16) ( n -- n ) 0xFFFF and ;
+: (int32) ( n -- n ) 0xFFFFFFFF and ;
+: (char) ( n -- n ) 0xFF and ;
 sizeof(int16) constant sizeof(short)
 sizeof(int32) constant sizeof(long)
 sizeof(int16) constant sizeof(word)
 sizeof(char) constant sizeof(byte)
 sizeof(int32) constant sizeof(fixed)
 
-: 1<< ( n -- n ) 1 swap << ;
-: 1>> ( n -- n ) 1 swap >> ;
-: 1u<< ( n -- n ) 1 swap u<< ;
-: 1u>> ( n -- n ) 1 swap u>> ;
+: @word ( field adr -- n ) swap sizeof(word) * + @q ;
+
 \ #define SWAP2(q) (((q)>>8) | (((q)<<8)&0xff00))
-: swap2 ( n -- n ) 
-	dup ( n n )
-	8 u>> swap ( k n )
-	8 u<< 0xFF00 and
-	or ;
+: swap2 ( q -- n ) 
+	dup ( q q )
+    8 u<< 0xFF00 and swap 
+    8 u>> or ;
 : swap4 ( n -- n )
 	dup dup dup ( n n n n )
 	24 u>> swap ( n n l n )
@@ -49,11 +49,46 @@ sizeof(long) 3 * sizeof(word) + constant sizeof(checksum)
 : @checksum.checksum-type ( adr -- v ) sizeof(long) + @q ;
 : @checksum.value ( adr -- v ) sizeof(word) sizeof(long) + + @h ;
 : @checksum.bogus2 ( adr -- v ) sizeof(long) 2* sizeof(word) + + @h ;
+: @checksum.value.add-checksum ( adr -- v ) @checksum.value (int16) ;
 : !checksum.bogus1 ( value adr -- ) !h ;
 : !checksum.checksum-type ( value adr -- v ) sizeof(long) + !q ;
 : !checksum.value ( value adr -- ) sizeof(long) sizeof(word) + + !h ;
 : !checksum.bogus2 ( value adr -- ) sizeof(long) 2* sizeof(word) + + !h ;
-: update-add-checksum ( check* src* length -- ) ;
+: ?checksum-types<> ( c1 c2 -- f ) 
+  @checksum.checksum-type swap
+  @checksum.checksum-type <> ;
+: =checksum ( check1 check2 -- f ) 
+  2dup ( c1 c2 c1 c2 )
+  ?checksum-types<> abort" Checksum types do not match!"
+  over @checksum.checksum-type add-checksum <> abort" invalid checksum type!"
+  @checksum.value.add-checksum swap
+  @checksum.value.add-checksum = ; 
+
+
+: +=checksum.value ( value check* -- ) 
+  dup @checksum.value ( value check* v2 )
+  rot ( check* v2 value )
+  + ( check* v3 )
+  0xFFFF and ( check v4 ) \ make sure it it only 16-bits wide
+  swap ( v4 check* ) !checksum.value ;
+
+: update-add-checksum ( check* src* length -- ) 
+  dup ?odd if 1- then 
+  sizeof(word) / ( check src length )
+  0 swap ( check* src* 0 length )
+  do 
+  >r \ stash the length onto the parameter stack
+  2dup swap ( check* src* index src* index ) 
+  @word ( check* src* index v ) swap ( c* s* v i )
+  >r \ stash index onto the return stack 
+  ( c* s* v ) 
+  rot swap over ( s* c* v c* ) +=checksum.value swap ( c* s* )
+  r> \ get the index back from the return stack
+  1+ \ increment i
+  r> \ put it back for the check
+  continue 2drop ;
+
+
 : new-checksum ( check* type -- ) ;
   2dup ( check* type check* type )
   swap ( check* type type check* )
@@ -71,7 +106,7 @@ sizeof(long) 3 * sizeof(word) + constant sizeof(checksum)
   @checksum.checksum-type add-checksum <> 
   if abort" illegal checksum kind!" then
   update-add-checksum ;
-: equal-checksums ( check1* check2* -- f ) ;
+: equal-checksums ( check1* check2* -- f ) =checksum ;
 
 \ cseries.h
 : true ( -- n ) 1 ;
