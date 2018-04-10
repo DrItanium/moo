@@ -19,7 +19,6 @@ sizeof(int32) constant sizeof(fixed)
 : (long) ( n -- v ) (int32) ;
 : (short) ( n -- v ) (int16) ;
 : (fixed) ( n -- v ) (int32) ;
-
 : @word ( field adr -- n ) swap sizeof(word) * + @q ;
 
 

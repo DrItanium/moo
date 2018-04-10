@@ -54,19 +54,13 @@ enum}
 0x1 constant FlagAlienDamage \ will be decreased at lower difficulty levels
 
 \ damage-definition struct
-sizeof(short) 4* sizeof(fixed) + constant sizeof(damage-definition) 
-
-: @damage-definition.type ( adr -- fx ) @q ;
-: @damage-definition.flags ( adr -- fx ) sizeof(short) + @q ;
-: @damage-definition.base ( adr -- fx ) sizeof(short) 2* + @q ;
-: @damage-definition.random ( adr -- fx ) sizeof(short) 3 * + @q ;
-: @damage-definition.scale ( adr -- fx ) sizeof(short) 4 * + @h ;
-: !damage-definition.type ( value adr -- fx ) !q ;
-: !damage-definition.flags ( value adr -- fx ) sizeof(short) + !q ;
-: !damage-definition.base ( value adr -- fx ) sizeof(short) 2* + !q ;
-: !damage-definition.random ( value adr -- fx ) sizeof(short) 3 * + !q ;
-: !damage-definition.scale ( value adr -- fx ) sizeof(short) 4 * + !h ;
-
+{struct
+ field(int16): &damage-definition.type 
+ field(int16): &damage-definition.flags
+ field(int16): &damage-definition.base
+ field(int16): &damage-definition.random
+ field(int32): &damage-definition.scale
+struct} constant sizeof(damage-definition)
 
 384 constant maximum-saved-objects
 
@@ -94,57 +88,50 @@ enum}
 : decode-activation-bias ( f -- n ) 12 u>> ;
 : encode-activation-bias ( f -- n ) 12 u<< ;
 
-sizeof(short) 4 * sizeof(word-point3d) + sizeof(word) + constant sizeof(map-object)
-0 
-: @map-object.type ( adr -- t ) @q ;
-: @map-object.index ( adr -- t ) [ sizeof(short) + dup ]L + @q ;
-: @map-object.facing ( adr -- t ) [ sizeof(short) + dup ]L + @q ;
-: @map-object.polygon-index ( adr -- t ) [ sizeof(short) + dup ]L + @q ;
-: &map-object.location ( adr -- adr ) [ sizeof(short) + dup ]L + ;
-: @map-object.flags ( adr -- t ) [ sizeof(world-point3d) + ]L + @word ;
+{struct \ map object
+ field(int16): &map-object.type 
+ field(int16): &map-object.index
+ field(int16): &map-object.facing
+ field(int16): &map-object.polygon-index
+ field(int16): &map-object.location
+ sizeof(world-point3d) field: &map-object.location 
+ field(int16): &map-object.flags
+struct} constant sizeof(map-object)
+\ sizeof(short) 4 * sizeof(word-point3d) + sizeof(word) + constant sizeof(map-object)
+: map-object.flags@ ( adr -- f ) &map-object.flags + @ ;
+: map-object.type@ ( adr -- f ) &map-object.type + @ ;
+: map-object.flags! ( value adr -- f ) &map-object.flags + ! ;
+: ?map-object.invisible ( adr -- f ) map-object.flags@ MapObjectIsInvisibleFlag bitset? ;
+: ?map-object.platform-sound ( adr -- f ) map-object.flags@ MapObjectIsPlatformSoundFlag bitset? ;
+: ?map-object.hanging-from-ceiling ( adr -- f ) map-object.flags@ MapObjectIsHangingFromCeilingFlag bitset? ;
+: ?map-object.blind ( adr -- f ) map-object.flags@ MapObjectIsBlindFlag bitset? ;
+: ?map-object.deaf ( adr -- f ) map-object.flags@ MapObjectIsDeafFlag bitset? ;
+: ?map-object.floats ( adr -- f ) map-object.flags@ MapObjectFloatsFlag bitset? ;
+: ?map-object.network-only ( adr -- f ) map-object.flags@ MapObjectIsNetworkOnlyFlag bitset? ;
 
-0 
-: !map-object.type ( value adr -- ) !q ;
-: !map-object.index ( value adr -- ) [ sizeof(short) + dup ]L + @q ;
-: !map-object.facing ( value adr -- ) [ sizeof(short) + dup ]L + @q ;
-: !map-object.polygon-index ( value adr -- ) [ sizeof(short) + dup ]L + @q ;
-: !map-object.flags ( value adr -- ) [ sizeof(world-point3d) + ]L + @q ;
+: ?map-object.monster ( t -- f ) map-object.type@ SavedMonster = ;
+: ?map-object.object ( t -- f ) map-object.type@ SavedObject = ;
+: ?map-object.item ( t -- f ) map-object.type@ SavedItem = ;
+: ?map-object.player ( t -- f ) map-object.type@ SavedPlayer = ;
+: ?map-object.goal ( t -- f ) map-object.type@ SavedGoal = ;
+: ?map-object.sound-source ( t -- f ) map-object.type@ SavedSoundSource = ;
+: mo-index<-> ( -- ) &map-object.index <-> ;
 
-: ?map-object.invisible ( adr -- f ) @map-object.flags MapObjectIsInvisibleFlag bitset? ;
-: ?map-object.platform-sound ( adr -- f ) @map-object.flags MapObjectIsPlatformSoundFlag bitset? ;
-: ?map-object.hanging-from-ceiling ( adr -- f ) @map-object.flags MapObjectIsHangingFromCeilingFlag bitset? ;
-: ?map-object.blind ( adr -- f ) @map-object.flags MapObjectIsBlindFlag bitset? ;
-: ?map-object.deaf ( adr -- f ) @map-object.flags MapObjectIsDeafFlag bitset? ;
-: ?map-object.floats ( adr -- f ) @map-object.flags MapObjectFloatsFlag bitset? ;
-: ?map-object.network-only ( adr -- f ) @map-object.flags MapObjectIsNetworkOnlyFlag bitset? ;
+mo-index<-> &map-object.sound-type
+&map-object.facing <-> &map-object.sound-volume
+mo-index<-> &map-object.scenery-type
+mo-index<-> &map-object.monster-type
+mo-index<-> &map-object.item-type
+mo-index<-> &map-object.team-bitfield
+mo-index<-> &map-object.goal-number
+&map-object.flags <-> &map-object.monster-activation-bias
 
-: ?map-object.monster ( t -- f ) @map-object.type SavedMonster = ;
-: ?map-object.object ( t -- f ) @map-object.type SavedObject = ;
-: ?map-object.item ( t -- f ) @map-object.type SavedItem = ;
-: ?map-object.player ( t -- f ) @map-object.type SavedPlayer = ;
-: ?map-object.goal ( t -- f ) @map-object.type SavedGoal = ;
-: ?map-object.sound-source ( t -- f ) @map-object.type SavedSoundSource = ;
-
-: @map-object.sound-type ( t -- f ) @map-object.index ;
-: @map-object.sound-volume ( t -- f ) @map-object.facing ;
-: @map-object.monster-type ( t -- f ) @map-object.index ;
-: @map-object.scenery-type ( t -- f ) @map-object.index ;
-: @map-object.item-type  ( t -- f ) @map-object.index ;
-: @map-object.team-bitfield  ( t -- f ) @map-object.index ;
-: @map-object.goal-number ( t -- f ) @map-object.index ;
-: !map-object.sound-type ( v t -- f ) !map-object.index ;
-: !map-object.sound-volume ( v t -- f ) !map-object.facing ;
-: !map-object.monster-type ( v t -- f ) !map-object.index ;
-: !map-object.scenery-type ( v t -- f ) !map-object.index ;
-: !map-object.item-type  ( v t -- f ) !map-object.index ;
-: !map-object.team-bitfield  ( v t -- f ) !map-object.index ;
-: !map-object.goal-number ( v t -- f ) !map-object.index ;
-
-: @map-object.monster-activation-bias ( t -- f ) @map-object.flags decode-activation-bias ;
-: !map-object.monster-activation-bias ( v t -- ) 
-  dup @map-object.flags
-  swap encode-activation-bias or ( t v ) 
-  swap !map-object.flags ;
+: map-object.monster-activation-bias@ ( adr -- f ) 
+  &map-object.monster-activation-bias + @ 
+  decode-activation-bias ;
+: map-object.monster-activation-bias! ( v adr -- ) 
+  &map-object.monster-activation-bias + dup @ 
+  swap encode-activation-bias or swap ! ;
   
 sizeof(world-point2d) constant sizeof(saved-map-pt)
 
