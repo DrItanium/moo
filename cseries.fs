@@ -6,16 +6,15 @@
 -2 constant byteswap_2byte
 -4 constant byteswap_4byte
 
-1 constant sizeof(char)
-2 constant sizeof(int16)
-4 constant sizeof(int32)
+sizeof(byte) constant sizeof(char)
+sizeof(byte) 2 * constant sizeof(int16)
+sizeof(byte) 4 * constant sizeof(int32)
 : (int16) ( n -- n ) 0xFFFF and ;
 : (int32) ( n -- n ) 0xFFFFFFFF and ;
 : (char) ( n -- n ) 0xFF and ;
 sizeof(int16) constant sizeof(short)
 sizeof(int32) constant sizeof(long)
 sizeof(int16) constant sizeof(word)
-sizeof(char) constant sizeof(byte)
 sizeof(int32) constant sizeof(fixed)
 
 : @word ( field adr -- n ) swap sizeof(word) * + @q ;
@@ -272,4 +271,11 @@ sizeof(short) sizeof(rgb-color) 256 * + constant sizeof(color-table)
 
 
 
+\ rle.h\c
+\ run length encoding operations
+: rle-get-destination-size ( compressed -- n ) @h ;
+: uncompress-bytes ( *compressed *raw -- )
+  ;
+\ : compress-bytes ( raw raw-size compressed max-compressed-size -- n )
+  
 ;s \ must always be last in file
