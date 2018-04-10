@@ -6,12 +6,16 @@
 -2 constant byteswap_2byte
 -4 constant byteswap_4byte
 
+: 1<< ( n -- n ) 1 swap << ;
+: 1>> ( n -- n ) 1 swap >> ;
+: 1u<< ( n -- n ) 1 swap u<< ;
+: 1u>> ( n -- n ) 1 swap u>> ;
 \ #define SWAP2(q) (((q)>>8) | (((q)<<8)&0xff00))
 : swap2 ( n -- n ) 
 	dup ( n n )
 	8 u>> swap ( k n )
 	8 u<< 0xFF00 and
-	 or ;
+	or ;
 : swap4 ( n -- n )
 	dup dup dup ( n n n n )
 	24 u>> swap ( n n l n )
@@ -50,9 +54,9 @@ meg meg * constant gig
 
 \ can we get away with just swapping stack arguments? lets hope so for now
 \ abs, min, and max defined in basics.fs
-
-: floor ( n floor -- v ) 2dup < if nip else drop then ;
-: ceiling ( n ceiling -- v ) 2dup > if nip else drop then ;
+: top-else-lower ( a b -- a | b ) if nip else drop then ;
+: floor ( n floor -- v ) 2dup < top-else-lower ;
+: ceiling ( n ceiling -- v ) 2dup > top-else-lower ;
 : pin ( n floor ceiling -- v ) \ n < floor ? floor : ceiling ( n , ceiling ) 
   rot ( floor ceiling n )
   tuck ( floor n ceiling n )
@@ -68,9 +72,7 @@ meg meg * constant gig
   ceiling ( v ) 
   then ;
 
-: flag ( b -- f ) 
-  1 swap ( 1 b )
-  u<< ( f ) ;
+: flag ( b -- f ) 1u<< ;
 
 : test-flag ( f b -- v ) 
   flag ( f m ) 
@@ -142,6 +144,6 @@ meg meg * constant gig
    10 u<< or ( b gr )
    or ;
 : 
-
+\ continue on textures.h
 
 ;s \ must always be last in file
