@@ -11,6 +11,9 @@
 4 constant sizeof(int32)
 sizeof(int16) constant sizeof(short)
 sizeof(int32) constant sizeof(long)
+sizeof(int16) constant sizeof(word)
+sizeof(char) constant sizeof(byte)
+sizeof(int32) constant sizeof(fixed)
 
 : 1<< ( n -- n ) 1 swap << ;
 : 1>> ( n -- n ) 1 swap >> ;
@@ -40,6 +43,35 @@ enum}
 \ there is code in checksum.h for the Checksum structure, we'll come back to
 \ this
 
+sizeof(long) 3 * sizeof(word) + constant sizeof(checksum) 
+
+: @checksum.bogus1 ( adr -- v ) @h ;
+: @checksum.checksum-type ( adr -- v ) sizeof(long) + @q ;
+: @checksum.value ( adr -- v ) sizeof(word) sizeof(long) + + @h ;
+: @checksum.bogus2 ( adr -- v ) sizeof(long) 2* sizeof(word) + + @h ;
+: !checksum.bogus1 ( value adr -- ) !h ;
+: !checksum.checksum-type ( value adr -- v ) sizeof(long) + !q ;
+: !checksum.value ( value adr -- ) sizeof(long) sizeof(word) + + !h ;
+: !checksum.bogus2 ( value adr -- ) sizeof(long) 2* sizeof(word) + + !h ;
+: update-add-checksum ( check* src* length -- ) ;
+: new-checksum ( check* type -- ) ;
+  2dup ( check* type check* type )
+  swap ( check* type type check* )
+  !checksum.checksum-type ( check* type )
+  over swap ( check* check* type )
+  add-checksum <> if abort" illegal checksum kind!" then 
+  0 swap !checksum.value ( check* )
+  dup ( check* check* )
+  rand swap ( check* v check* )
+  !checksum.bogus1 
+  rand swap ( v check* )
+  !checksum.bogus2 ;
+: update-checksum ( check* src* length -- ) 
+  rot dup >r -rot r> ( check* src* length check* )
+  @checksum.checksum-type add-checksum <> 
+  if abort" illegal checksum kind!" then
+  update-add-checksum ;
+: equal-checksums ( check1* check2* -- f ) ;
 
 \ cseries.h
 : true ( -- n ) 1 ;
@@ -124,6 +156,14 @@ meg meg * constant gig
 -128 constant *char-min*
 8 constant *char-bits*
 
+{enum
+enum: fatal-error
+enum: info-error
+enum}
+
+\ : alert-user ( type resource-number error-number identifier -- ) ;
+\ : get-cstr ( buffer collection-number string-number -- ptr ) ;
+
 \ tons of functions at the bottom of cseries.h which have not been implemented
 
 \ textures.h
@@ -174,6 +214,27 @@ sizeof(int32) constant sizeof(pixel32)
   8 u>> 0x000000FF and swap ( r bmod g )
   0x0000FF00 and or swap ( comb r ) 
   8 u<< 0x00FF0000 and or ;
-\ continue on textures.h
+
+sizeof(word) 3* constant sizeof(rgb-color)
+
+: @rgb-color.r ( ptr -- r ) @q ;
+: @rgb-color.g ( ptr -- g ) sizeof(word) + @q ;
+: @rgb-color.b ( ptr -- b ) sizeof(word) 2* + @q ;
+
+: @rgb-color.rgb ( ptr -- r g b )
+  dup dup ( ptr ptr ptr )
+  @rgb-color.r rot ( ptr r ptr )
+  @rgb-color.g rot ( r g ptr )
+  @rgb-color.b ;
+
+sizeof(short) sizeof(rgb-color) 256 * + constant sizeof(color-table)
+
+: @color-table.color-count ( adr -- v ) @q ;
+: @color-table.colors-start ( adr -- adr ) sizeof(short) + ;
+: @color-table.colors-at ( adr field -- color-rgb& ) sizeof(rgb-color) * swap color-table.colors-start + ;
+0x8000 constant column-order-bit
+0x4000 constant transparent-bit
+
+
 
 ;s \ must always be last in file

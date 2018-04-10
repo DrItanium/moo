@@ -43,7 +43,6 @@ fixed-fractional-bits world-fractional-bits - constant fractional-bits-differenc
   1 u>> + ;
 
 sizeof(int16) constant sizeof(world-distance)
-sizeof(int32) constant sizeof(fixed)
 sizeof(int16) constant sizeof(angle)
 sizeof(world-distance) 2* constant sizeof(world-point2d)
 sizeof(fixed) 3* constant sizeof(fixed-point3d)
