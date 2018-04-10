@@ -146,5 +146,48 @@ sizeof(short) 4 * sizeof(word-point3d) + sizeof(word) + constant sizeof(map-obje
   swap encode-activation-bias or ( t v ) 
   swap !map-object.flags ;
   
+sizeof(world-point2d) constant sizeof(saved-map-pt)
+
+\ line-data <-> saved-line
+\ side-data <-> saved-side
+\ polygon-data <-> saved-poly
+\ map-annotation <-> saved-annotation
+\ map-object <-> saved-object
+\ static-data <-> saved-map-data
+
+\ entry point types
+0x01 constant EntryPointSinglePlayer
+0x02 constant EntryPointMultiplayerCooperative
+0x04 constant EntryPointMultiplayerCarnage
+0x08 constant EntryPointCaptureTheFlag
+0x10 constant EntryPointKingOfHill
+0x20 constant EntryPointDefense
+0x40 constant EntryPointRugby
+
+sizeof(short) level-name-length + constant sizeof(entry-point)
+
+: &entry-point.level-number ( adr -- adr ) ;
+: &entry-point.level-name ( adr -- adr ) sizeof(short) + ;
+: @entry-point.level-number ( adr -- n ) &entry-point.level-number @q ;
+: @entry-point.level-name:index ( offset adr -- n ) &entry-point.level-name + @ ;
+: !entry-point.level-number ( value adr -- n ) &entry-point.level-number !q ;
+: !entry-point.level-name:index ( value offset adr -- n ) &entry-point.level-name + ! ;
+
+32 constant maximum-plyaer-start-name-length
+
+sizeof(short) 3 * maximum-player-start-name-length 1+ + constant sizeof(player-start-data)
+
+: &player-start-data.team ( adr -- adr ) ;
+: &player-start-data.identifier ( adr -- adr ) sizeof(short) + ;
+: &player-start-data.color ( adr -- adr ) sizeof(short) 2* + ;
+: &player-start-data.name ( adr -- adr ) sizeof(short) 3 * + ;
+: @player-start-data.team ( adr -- n ) &player-start-data.team @q ;
+: @player-start-data.identifier ( adr -- n ) &player-start-data.identifier @q ;
+: @player-start-data.color ( adr -- n ) &player-start-data.color @q ;
+: @player-start-data.name:index ( offset adr -- n ) &player-start-data.name + @ ;
+: !player-start-data.team ( value adr -- n ) &player-start-data.team !q ;
+: !player-start-data.identifier ( value adr -- n ) &player-start-data.identifier !q ;
+: !player-start-data.color ( value adr -- n ) &player-start-data.color !q ;
+: !player-start-data.name:index ( value offset adr -- n ) &player-start-data.name + ! ;
 
 ;s \ always last in the file
