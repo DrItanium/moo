@@ -71,3 +71,5 @@ sizeof(long) 3 * sizeof(word) + constant sizeof(checksum)
   if abort" illegal checksum kind!" then
   update-add-checksum ;
 : equal-checksums ( check1* check2* -- f ) =checksum ;
+
+;s

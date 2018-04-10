@@ -67,3 +67,5 @@ sizeof(short) sizeof(rgb-color) 256 * + constant sizeof(color-table)
 : @color-table.colors-at ( adr field -- color-rgb& ) sizeof(rgb-color) * swap color-table.colors-start + ;
 0x8000 constant column-order-bit
 0x4000 constant transparent-bit
+
+;s \ must always be last in file

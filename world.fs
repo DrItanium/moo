@@ -157,7 +157,6 @@ default-random-seed random-seed !
   dup * ;
   
 \ Taken from the documentation laid out by the original source code
-\
 : isqrt ( n -- k ) ;
 : distance3d ( p0 p1 -- n )
   2dup ( p0 p1 p0 p1 )
@@ -184,3 +183,4 @@ default-random-seed random-seed !
     
   \ : rotate-point2d ( point origin theta -- point )
   
+;s \ must always be last in file

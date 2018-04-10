@@ -14,3 +14,5 @@
 	8 u<< 0x00ff00 and ( n k l )
 	or swap ( z n ) 
 	24 u<< 0xFF000000 and or ;
+
+;s
