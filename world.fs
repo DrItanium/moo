@@ -1,4 +1,3 @@
-: 1u<< ( x -- n ) 1 swap u<< ;
 : *3/4 ( x -- n ) 3 * 4/ ;
 10 constant trig-shift
 trig-shift 1u<< constant trig-magnitude
@@ -43,10 +42,6 @@ fixed-fractional-bits world-fractional-bits - constant fractional-bits-differenc
   if swap then
   1 u>> + ;
 
-2 constant sizeof(int16)
-4 constant sizeof(int32)
-sizeof(int16) constant sizeof(short)
-sizeof(int32) constant sizeof(long)
 sizeof(int16) constant sizeof(world-distance)
 sizeof(int32) constant sizeof(fixed)
 sizeof(int16) constant sizeof(angle)

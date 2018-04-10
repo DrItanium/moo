@@ -6,6 +6,12 @@
 -2 constant byteswap_2byte
 -4 constant byteswap_4byte
 
+1 constant sizeof(char)
+2 constant sizeof(int16)
+4 constant sizeof(int32)
+sizeof(int16) constant sizeof(short)
+sizeof(int32) constant sizeof(long)
+
 : 1<< ( n -- n ) 1 swap << ;
 : 1>> ( n -- n ) 1 swap >> ;
 : 1u<< ( n -- n ) 1 swap u<< ;
@@ -121,6 +127,9 @@ meg meg * constant gig
 \ tons of functions at the bottom of cseries.h which have not been implemented
 
 \ textures.h
+sizeof(char) constant sizeof(pixel8)
+sizeof(int16) constant sizeof(pixel16)
+sizeof(int32) constant sizeof(pixel32)
 256 constant pixel8-maximum-colors
 32768 constant pixel16-maximum-colors 
 16777216 constant pixel32-maximum-colors
@@ -143,7 +152,28 @@ meg meg * constant gig
    5 u<< swap ( b g! r )
    10 u<< or ( b gr )
    or ;
-: 
+
+: rgbcolor-to-pixel16 ( r g b -- n ) 
+  11 u>> 0x1f and ( r g bmod )
+  swap ( r bmod g )
+  6 u>> 0x03e0 and ( r bmod gmod )
+  or swap ( comb r )
+  1 u>> 0x7c00 and or ;
+
+: extract-pixel32 ( p -- n ) pixel32-maximum-component and ;
+: red32 ( p -- n ) 16 u>> ;
+: green32 ( p -- n ) 8 u>> extract-pixel32 ;
+: blue32 ( p -- n ) extract pixel32 ;
+: build-pixel32 ( r g b -- n ) 
+  swap ( r b g )
+  8 u<< ( r b gmod )
+  or ( r comb )
+  swap 
+  16 u<< or ;
+: rgbcolor-to-pixel32 ( r g b -- n ) 
+  8 u>> 0x000000FF and swap ( r bmod g )
+  0x0000FF00 and or swap ( comb r ) 
+  8 u<< 0x00FF0000 and or ;
 \ continue on textures.h
 
 ;s \ must always be last in file
