@@ -13,13 +13,13 @@ ticks-per-second 2/ constant teleporting-midpoint
 teleporting-midpoint 2* constant teleporting-duration
 
 \ map limits
-kilo constant maximum-polygons-per-map
-kilo 4 * constant maximum-sides-per-map
-kilo 8 * constant maximum-endpoints-per-map 
-kilo 4 * constant maximum-lines-per-map
-128 constant maximum-levels-per-map
+kilo constant max-polygons-per-map
+kilo 4 * constant max-sides-per-map
+kilo 8 * constant max-endpoints-per-map 
+kilo 4 * constant max-lines-per-map
+128 constant max-levels-per-map
 
-64 1+ constant level-name-length
+64 1+ constant level-name-len
 
 \ shape descriptor is included here... not sure why
 
@@ -62,7 +62,7 @@ enum}
  field(int32): &damage-definition.scale
 struct} constant sizeof(damage-definition)
 
-384 constant maximum-saved-objects
+384 constant max-saved-objects
 
 {enum \ map object types
 enum: SavedMonster \ .index is monster type 
@@ -151,30 +151,78 @@ sizeof(world-point2d) constant sizeof(saved-map-pt)
 0x20 constant EntryPointDefense
 0x40 constant EntryPointRugby
 
-sizeof(short) level-name-length + constant sizeof(entry-point)
+{struct
+ field(short): &entry-point.level-number
+ level-name-len field: &entry-point.name 
+struct} constant sizeof(entry-point)
 
-: &entry-point.level-number ( adr -- adr ) ;
-: &entry-point.level-name ( adr -- adr ) sizeof(short) + ;
-: @entry-point.level-number ( adr -- n ) &entry-point.level-number @q ;
-: @entry-point.level-name:index ( offset adr -- n ) &entry-point.level-name + @ ;
-: !entry-point.level-number ( value adr -- n ) &entry-point.level-number !q ;
-: !entry-point.level-name:index ( value offset adr -- n ) &entry-point.level-name + ! ;
+32 constant max-player-start-name-len 
 
-32 constant maximum-plyaer-start-name-length
+{struct \ player-start-data
+ field(short): &player-start-data.team
+ field(short): &player-start-data.identifier
+ field(short): &player-start-data.color
+ max-player-start-name-len 1+ field: &player-start-data.name 
+struct} constant sizeof(player-start-data)
 
-sizeof(short) 3 * maximum-player-start-name-length 1+ + constant sizeof(player-start-data)
+{struct \ directory-data
+ field(short)           &directory-data.mission-flags
+ field(short)           &directory-data.environment-flags
+ field(long)            &directory-data.entry-point-flags
+ level-name-len field:  &directory-data.level-name 
+struct} constant sizeof(directory-data)
 
-: &player-start-data.team ( adr -- adr ) ;
-: &player-start-data.identifier ( adr -- adr ) sizeof(short) + ;
-: &player-start-data.color ( adr -- adr ) sizeof(short) 2* + ;
-: &player-start-data.name ( adr -- adr ) sizeof(short) 3 * + ;
-: @player-start-data.team ( adr -- n ) &player-start-data.team @q ;
-: @player-start-data.identifier ( adr -- n ) &player-start-data.identifier @q ;
-: @player-start-data.color ( adr -- n ) &player-start-data.color @q ;
-: @player-start-data.name:index ( offset adr -- n ) &player-start-data.name + @ ;
-: !player-start-data.team ( value adr -- n ) &player-start-data.team !q ;
-: !player-start-data.identifier ( value adr -- n ) &player-start-data.identifier !q ;
-: !player-start-data.color ( value adr -- n ) &player-start-data.color !q ;
-: !player-start-data.name:index ( value offset adr -- n ) &player-start-data.name + ! ;
+20 constant max-annotations-per-map
+64 constant max-annotation-text-len
+{struct \ map-annotation
+    field(short): &map-annotation.type
+    field(world-point2d): &map-annotation.location
+    field(short): &map-annotation.polygon-index
+    max-annotation-text-len field: text
+struct} constant sizeof(map-annotation)
 
+: get-next-map-annotation ( *count -- *ma ) ;
+
+64 constant max-ambient-sound-images-per-map
+
+{struct \ ambient-sound-image-data
+\ non directional ambient component
+  field(word): &ambient-sound-image-data.flags
+  field(short): &ambient-sound-image-data.sound_index
+  field(short): &ambient-sound-image-data.volume
+  5 sizeof(short) * field: &ambient-sound-image-data.unused
+struct} constant sizeof(ambient-sound-image-data)
+
+64 constant max-random-sound-images-per-map
+
+0x0001 constant SoundImageIsNonDirectionalFlag \ ignore direction
+
+{struct \ random-sound-image-data
+ field(word):             &random-sound-image-data.flags
+ field(short):            &random-sound-image-data.sound-index
+ field(short):            &random-sound-image-data.volume 
+ field(short):            &random-sound-image-data.delta-volume 
+ field(short):            &random-sound-image-data.period
+ field(short):            &random-sound-image-data.delta-period
+ field(angle):            &random-sound-image-data.direction
+ field(angle):            &random-sound-image-data.delta-direction
+ field(fixed):            &random-sound-image-data.pitch
+ field(fixed):            &random-sound-image-data.delta-pitch
+ field(short):            &random-sound-image-data.phase \ only used at runtime; initialize to none
+ 3 sizeof(short) * field: &random-sound-image-data.unused
+struct} constant sizeof(random-sound-image-data)
+\ the map contains a series of slots in which map objects are placed
+384 constant max-objects-per-map
+
+: ?flag-marked ( adr mask -- b ) swap word@ and (word) ;
+: ?slot-used ( adr -- b ) 0x8000 ?flag-marked ;
+: ?slot-free ( adr -- b ) ?slot-used invert (word) ;
+: set-flag ( adr flag -- ) (word) over word@ or swap word! ;
+: clear-flag ( adr flag -- ) invert (word) over word@ and swap word! ;
+: mark-slot-as-free ( adr -- ) 0x8000 clear-flag ;
+: mark-slot-as-used ( adr -- ) 0x8000 set-flag ;
+: ?object-was-rendered ( adr -- f ) 0x4000 ?flag-marked ;
+: mark-object-rendered ( adr -- ) 0x4000 set-flag ;
+: mark-object-not-rendered ( adr -- ) 0x4000 clear-flag ;
+\ map.h: line 238
 ;s \ always last in the file
