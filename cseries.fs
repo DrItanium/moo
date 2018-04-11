@@ -4,22 +4,32 @@
 
 
 sizeof(byte) constant sizeof(char)
-sizeof(byte) 2 * constant sizeof(int16)
-sizeof(byte) 4 * constant sizeof(int32)
+: field(char): ( a b -- c c ) sizeof(char) field: ;
 : (int16) ( n -- n ) 0xFFFF and ;
 : (int32) ( n -- n ) 0xFFFFFFFF and ;
 : (char) ( n -- n ) 0xFF and ;
 sizeof(int16) constant sizeof(short)
+: field(short): ( a b -- c c ) sizeof(short) field: ;
 sizeof(int32) constant sizeof(long)
+: field(long): ( a b -- c c ) sizeof(long) field: ;
 sizeof(int16) constant sizeof(word)
+: field(word): ( a b -- c c ) sizeof(word) field: ;
 sizeof(int32) constant sizeof(fixed)
+: field(fixed): ( a b -- c c ) sizeof(fixed) field: ;
+: long@ ( adr -- v ) int32@ ;
+: short@ ( adr -- v ) int16@ ;
+: word@ ( adr -- v ) int16@ ;
+: fixed@ ( adr -- v ) int32@ ;
+: long! ( v adr -- ) int32! ;
+: short! ( v adr -- ) int16! ;
+: word! ( v adr -- ) int16! ;
+: fixed! ( v adr -- ) int32! ;
 
 : (byte) ( n -- v ) (char) ;
 : (word) ( n -- v ) (int16) ;
 : (long) ( n -- v ) (int32) ;
 : (short) ( n -- v ) (int16) ;
 : (fixed) ( n -- v ) (int32) ;
-: @word ( field adr -- n ) swap sizeof(word) * + @q ;
 
 
 

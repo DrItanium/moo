@@ -42,75 +42,89 @@ fixed-fractional-bits world-fractional-bits - constant fractional-bits-differenc
   if swap then
   1 u>> + ;
 
-sizeof(int16) constant sizeof(world-distance)
-sizeof(int16) constant sizeof(angle)
-sizeof(world-distance) 2* constant sizeof(world-point2d)
-sizeof(fixed) 3* constant sizeof(fixed-point3d)
-sizeof(world-distance) 3* constant sizeof(world-point3d)
-sizeof(world-distance) 2* constant sizeof(world-vector2d)
-sizeof(world-distance) 3* constant sizeof(world-vector3d)
-sizeof(fixed) 3* constant sizeof(fixed-vector3d)
-sizeof(world-point3d) sizeof(short) + ( a )
-sizeof(angle) 2* + ( b )
-sizeof(world-vector3d) +
-constant sizeof(world-location3d)
+sizeof(int16) <-> sizeof(world-distance)
+sizeof(int16) <-> sizeof(angle)
+: field(world-distance): ( a b -- c c ) sizeof(world-distance) field: ;
+: field(angle): ( a b -- c c ) sizeof(angle) field: ;
+{struct \ world-point2d
+    field(world-distance): &world-point2d.x 
+    field(world-distance): &world-point2d.y
+struct} constant sizeof(world-point2d)
 
-: field-int16 ( adr field -- v ) 2* ( adr field*2 ) + q@ ;
-: field-int32 ( adr field -- v ) 4* + h@ ;
-: field-world-distance ( adr field -- v ) field-int16 ;
-: field-fixed ( adr field -- v ) field-int32 ;
-: field-angle ( adr field -- v ) field-int16 ;
 
-: world-point2d.x ( adr -- x ) 0 field-world-distance ;
-: world-point2d.y ( adr -- y ) 1 field-world-distance ;
+{struct \ world-point3d
+    field(world-distance): &world-point3d.x 
+    field(world-distance): &world-point3d.y
+    field(world-distance): &world-point3d.z
+struct} constant sizeof(world-point3d)
 
-: fixed-point3d.x ( adr -- x ) 0 field-fixed ;
-: fixed-point3d.y ( adr -- y ) 1 field-fixed ;
-: fixed-point3d.z ( adr -- z ) 2 field-fixed ;
+{struct \ fixed-point3d 
+    field(fixed): &fixed-point3d.x
+    field(fixed): &fixed-point3d.y
+    field(fixed): &fixed-point3d.z
+struct} constant sizeof(fixed-point3d)
+: field(world-point2d) ( a b -- c c ) sizeof(world-point2d) field: ;
+: field(world-point3d) ( a b -- c c ) sizeof(world-point3d) field: ;
+: field(fixed-point3d) ( a b -- c c ) sizeof(fixed-point3d) field: ;
 
-: world-point3d.x ( adr -- x ) 0 field-world-distance ;
-: world-point3d.y ( adr -- y ) 1 field-world-distance ;
-: world-point3d.z ( adr -- z ) 2 field-world-distance ;
+{struct \ world-vector2d
+    field(world-distance): &world-vector2d.i 
+    field(world-distance): &world-vector2d.j
+struct} constant sizeof(world-vector2d)
 
-: world-vector2d.x ( adr -- x ) 0 field-world-distance ;
-: world-vector2d.y ( adr -- x ) 1 field-world-distance ;
 
-: world-vector3d.x ( adr -- x ) world-vector2d.x ;
-: world-vector3d.y ( adr -- y ) world-vector2d.y ;
-: world-vector3d.z ( adr -- z ) 2 field-world-distance ;
+{struct \ world-vector3d
+    field(world-distance): &world-vector3d.i 
+    field(world-distance): &world-vector3d.j
+    field(world-distance): &world-vector3d.k
+struct} constant sizeof(world-vector3d)
 
-: fixed-vector3d.i ( adr -- i ) 0 field-fixed ;
-: fixed-vector3d.j ( adr -- j ) 1 field-fixed ;
-: fixed-vector3d.k ( adr -- k ) 2 field-fixed ;
+{struct \ fixed-vector3d
+    field(fixed): &fixed-vector3d.i 
+    field(fixed): &fixed-vector3d.j
+    field(fixed): &fixed-vector3d.k
+struct} constant sizeof(fixed-vector3d)
 
-: world-location3d.point.x ( adr -- n ) world-point2d.x ;
-: world-location3d.point.y ( adr -- n ) world-point2d.y ;
-: world-location3d.polygon_index ( adr -- v )
-  sizeof(world-point2d) + ( nadr ) q@ ;
-: world-location3d.yaw ( adr -- v )
-  sizeof(world-point2d)
-  sizeof(short) +
-  + q@ ;
-: world-location3d.pitch ( adr -- v )
-  sizeof(world-point2d) sizeof(short) +
-  sizeof(angle) +
-  + q@ ;
+: field(world-vector2d) ( a b -- c c ) sizeof(world-vector2d) field: ;
+: field(world-vector3d) ( a b -- c c ) sizeof(world-vector3d) field: ;
+: field(fixed-vector3d) ( a b -- c c ) sizeof(fixed-vector3d) field: ;
 
-: world-location3d.velocity.i ( adr -- v )
-  sizeof(world-point2d) sizeof(short) +
-  sizeof(angle) 2* +
-  + q@ ;
-  
-: world-location3d.velocity.j ( adr -- v )
-  sizeof(world-point2d) sizeof(short) +
-  sizeof(angle) 2* +
-  sizeof(world-distance) +
-  + q@ ;
-: world-location3d.velocity.k ( adr -- v )
-  sizeof(world-point2d) sizeof(short) +
-  sizeof(angle) 2* +
-  sizeof(world-distance) 2* +
-  + q@ ;
+{struct \ world-location3d
+field(world-point3d): &world-location3d.point
+field(short): &world-location3d.polygon-index
+field(angle): &world-location3d.yaw
+field(angle): &world-location3d.pitch
+field(world-vector3d) &world-location3d.velocity
+struct} constant sizeof(world-location3d)
+
+: field(world-location3d) ( a b -- c c ) sizeof(world-location3d) field: ;
+
+
+: world-point2d.x@ ( adr -- x ) &world-point2d.x + @ ;
+: world-point2d.y@ ( adr -- y ) &world-point2d.y + @ ;
+
+: world-point3d.x@ ( adr -- x ) &world-point3d.x + @ ;
+: world-point3d.y@ ( adr -- y ) &world-point3d.y + @ ;
+: world-point3d.z@ ( adr -- z ) &world-point3d.z + @ ;
+
+: fixed-point3d.x@ ( adr -- x ) &fixed-point3d.x + @ ;
+: fixed-point3d.y@ ( adr -- y ) &fixed-point3d.y + @ ;
+: fixed-point3d.z@ ( adr -- z ) &fixed-point3d.z + @ ;
+
+: world-vector2d.i@ ( adr -- i ) &world-vector2d.i + @ ;
+: world-vector2d.j@ ( adr -- j ) &world-vector2d.j + @ ;
+
+: world-vector3d.i@ ( adr -- i ) &world-vector3d.i + @ ;
+: world-vector3d.j@ ( adr -- j ) &world-vector3d.j + @ ;
+: world-vector3d.k@ ( adr -- k ) &world-vector3d.k + @ ;
+
+: fixed-vector3d.i@ ( adr -- i ) &fixed-vector3d.i + @ ;
+: fixed-vector3d.j@ ( adr -- j ) &fixed-vector3d.j + @ ;
+: fixed-vector3d.k@ ( adr -- k ) &fixed-vector3d.k + @ ;
+
+: world-location3d.polygon-index@ ( adr -- v ) &world-location3d.polygon-index + @ ;
+: world-location3d.yaw@ ( adr -- v ) &world-location3d.yaw + @ ;
+: world-location3d.pitch@ ( adr -- v ) &world-location3d.pitch + @ ;
 variable random-seed
 default-random-seed random-seed !
 : set-random-seed ( seed -- )
@@ -125,49 +139,49 @@ default-random-seed random-seed !
   then
   dup random-seed ! ;
 
-: world-point2d.x- ( p0 p1 -- dx )
-  world-point2d.x swap
-  world-point2d.x swap - ;
-: world-point2d.y- ( p0 p1 -- dy )
-  world-point2d.y swap
-  world-point2d.y swap - ;
+: world-point2d.x@- ( p0 p1 -- dx )
+  world-point2d.x@ swap
+  world-point2d.x@ swap - ;
+: world-point2d.y@- ( p0 p1 -- dy )
+  world-point2d.y@ swap
+  world-point2d.y@ swap - ;
 
-: world-point3d.x- ( p0 p1 -- dx )
-  world-point3d.x swap
-  world-point3d.x swap - ;
-: world-point3d.y- ( p0 p1 -- dy )
-  world-point3d.y swap
-  world-point3d.y swap - ;
-: world-point3d.z- ( p0 p1 -- dy )
-  world-point3d.z swap
-  world-point3d.z swap - ;
+: world-point3d.x@- ( p0 p1 -- dx )
+  world-point3d.x@ swap
+  world-point3d.x@ swap - ;
+: world-point3d.y@- ( p0 p1 -- dy )
+  world-point3d.y@ swap
+  world-point3d.y@ swap - ;
+: world-point3d.z@- ( p0 p1 -- dz )
+  world-point3d.z@ swap
+  world-point3d.z@ swap - ;
 
 : to-int16 ( n -- k ) short-max min ;
 
-  
+: 2abs ( a b -- aa ab ) abs swap abs swap ;
 : guess-distance2d ( p0 p1 -- n )
   2dup ( p0 p1 p0 p1 )
-  world-point2d.x- ( p0 p1 dx )
+  world-point2d.x@- ( p0 p1 dx )
   -rot ( dx p0 p1 )
-  world-point2d.y- ( dx dy )
-  abs swap abs swap ( dx dy )
+  world-point2d.y@- ( dx dy )
+  2abs ( dx dy )
   guess-hypotenuse
   to-int16 ;
 : square ( n -- n^2 )
   dup * ;
+: square3 ( a b c -- c^2 a b ) square -rot ;
   
 \ Taken from the documentation laid out by the original source code
 : isqrt ( n -- k ) ;
+
 : distance3d ( p0 p1 -- n )
   2dup ( p0 p1 p0 p1 )
-  world-point3d.x- ( p0 p1 dx )
-  square ( p0 p1 dx^2 )
-  -rot
+  world-point3d.x@- ( p0 p1 dx )
+  square3
   2dup ( dx^2 p0 p1 p0 p1 )
-  world-point3d.y- ( dx p0 p1 dy )
-  square ( dx^2 p0 p1 dy^2 )
-  -rot ( dx dy p0 p1 )
-  world-point3d.z- ( dx dy dz )
+  world-point3d.y@- ( dx p0 p1 dy )
+  square3
+  world-point3d.z@- ( dx dy dz )
   square
   + + ( combined )
   isqrt ( distance )
@@ -175,12 +189,13 @@ default-random-seed random-seed !
   
 : distance2d ( p0 p1 -- n )
   2dup ( p0 p1 p0 p1 )
-  world-point2d.x- square rot-
-  world-point2d.y- square +
+  world-point2d.x- 
+  square3
+  world-point2d.y- 
+  square +
   isqrt ;
   
   
     
-  \ : rotate-point2d ( point origin theta -- point )
   
 ;s \ must always be last in file
